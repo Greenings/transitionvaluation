@@ -7,4 +7,5 @@ This open-source repository contains resources for the valuation of corporate tr
 ## 3. Installation and Setup
 ## 4. User Manual
 ## 5. Credits and License
-Collaborators: WifOR, Value Balancing Alliance, Greenings.
+Kudos to our collaborators at WifOR, Value Balancing Alliance, Greenings.
+Released under Creative Commons Attribution-NonCommercial-ShareAlike (CC-BY-NC-SA). A creative commons license that bans commercial use and requires you to release any modified works under this license. More information: http://creativecommons.org/licenses/by-nc-sa/4.0/.
