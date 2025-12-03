@@ -1,0 +1,3 @@
+[submodule "value-factors"]
+	path = value-factors
+	url = https://github.com/wifor-impactanalysis/WifOR-Value-Factors.git
