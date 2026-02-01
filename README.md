@@ -3,11 +3,11 @@
 ## 1. Project: Transition Valuation
 
 ## 2. Description:
-This open-source repository contains resources for the valuation of corporate transitions to net zero. The intended users are researchers, analysts, and developers for academic and professional applications, primarily in the fields of sustainability and finance: asset owners, asset managers, impact valuation providers, policy-makers and regulators. This repo is curated by the project managers and sprint teams of the Transition Valuation Partnership under the custodianship of Greenings, the Swiss-based non-profit organization for sustainable transitions.
+This open-source repository contains resources for the valuation of corporate transitions to net zero. The intended users are researchers, analysts, and developers for academic and professional applications, primarily in the fields of sustainability and finance: asset owners, asset managers, impact valuation providers, policy-makers and regulators. This repo is curated by the project managers and sprint teams of the Transition Valuation Project under the custodianship of Greenings, the Swiss-based non-profit organization for sustainable transitions.
 
 ### Background and Context
 
-The Transition Valuation Partnership represents a convergence of the **Impact Accounting** movement with the principles of **double materiality** as outlined in the EU Corporate Sustainability Reporting Directive (CSRD). For over 15 years, pioneering organizations including GIST Impact, Trucost, WifOR, PwC, KPMG, Capitals Coalition, Valuing Impact, and the German Environmental Agency (UBA) have been developing methodologies to better integrate external effects of business activities into corporate decision-making and financial reporting.
+The Transition Valuation Project represents a convergence of the **Impact Accounting** movement with the principles of **double materiality** as outlined in the EU Corporate Sustainability Reporting Directive (CSRD). For over 15 years, pioneering organizations including GIST Impact, Trucost, WifOR, PwC, KPMG, Capitals Coalition, Valuing Impact, and the German Environmental Agency (UBA) have been developing methodologies to better integrate external effects of business activities into corporate decision-making and financial reporting.
 
 This initiative builds on:
 - **Academic Research**: Collaboration with Oxford Net Zero, Frankfurt School of Finance, and leading universities
@@ -267,7 +267,7 @@ Under the following terms:
 
 ## Contact & Support
 
-**Organization**: Transition Valuation Partnership under Greenings custodianship
+**Organization**: Transition Valuation Project under Greenings custodianship
 
 **Website**: www.greenings.org
 

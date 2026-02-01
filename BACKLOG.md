@@ -1,9 +1,222 @@
 # WifOR Value Factors - Backlog
 
-**Organization**: Transition Valuation Partnership under Greenings custodianship
-**Last Updated**: 2026-01-02
+**Organization**: Transition Valuation Project under Greenings custodianship
+**Last Updated**: 2026-02-01
 
 This document tracks open questions, improvement suggestions, and future work items for the WifOR Value Factors project.
+
+---
+
+## ONPV INTEGRATION (Based on ONPV_TVP_Integration_Guide.md)
+
+### Overview
+
+This section tracks tasks for integrating the four ONPV (Outcomes-based Net Present Value) differentiation steps with the existing TVP infrastructure.
+
+| ONPV Step | TVP Status | Priority |
+|:---|:---|:---|
+| **Step 1: Value Factors** | Fully covered | Immediate |
+| **Step 2: Exposure Factors** | Structure available | Short-term |
+| **Step 3: Vulnerability Factors** | Not implemented | Medium-term |
+| **Step 4: Attribution Factors** | Not implemented | Medium-term |
+
+---
+
+### Phase 1: Step 1 Integration (Immediate)
+
+#### High Priority
+- **ONPV-1.1**: Update Step1_Value_Factors_Methodology.md to reference TVP value-factors
+  - Add TVP integration section with code examples
+  - Document HDF5 output loading patterns
+  - Reference METHODOLOGY.md and INPUT_FILES_METHODOLOGY.md
+  - Owner: TBD
+  - Estimated effort: 1-2 days
+
+- **ONPV-1.2**: Align coefficient tables with TVP output structure
+  - Validate consistency between ONPV parameters and TVP methodology
+  - Document any parameter differences (SDR, VSL, base year)
+  - Owner: TBD
+  - Estimated effort: 1-2 days
+
+- **ONPV-1.3**: Create coefficient loading utility functions
+  - Add functions to load all 8 indicators from HDF5
+  - Include example Jupyter notebook
+  - Owner: TBD
+  - Estimated effort: 2-3 days
+
+---
+
+### Phase 2: Step 2 Module (Short-term)
+
+#### High Priority
+- **ONPV-2.1**: Create `exposure-factors/` folder structure
+  - README.md with methodology overview
+  - config.yaml following TVP pattern
+  - exposure_factor_utils.py for common functions
+  - Owner: TBD
+  - Estimated effort: 1-2 days
+
+- **ONPV-2.2**: Build ENCORE → NACE sector mapping
+  - Source ENCORE sector dependency data
+  - Create mapping table to TVP NACE sectors
+  - Validate coverage (all TVP sectors mapped)
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+- **ONPV-2.3**: Develop SASB materiality integration
+  - Download SASB industry materiality map
+  - Map to TVP NACE sectors
+  - Create Human Capital exposure scores
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+#### Medium Priority
+- **ONPV-2.4**: Implement four-capital scoring methodology
+  - Script: 001_prepare_NaturalCapital_ENCORE.py
+  - Script: 002_prepare_HumanCapital_SASB.py
+  - Script: 003_prepare_SocialCapital.py
+  - Script: 004_prepare_BuiltCapital.py
+  - Owner: TBD
+  - Estimated effort: 10-15 days
+
+- **ONPV-2.5**: Create exposure factor output files
+  - Follow TVP HDF5/Excel output pattern
+  - Include metadata sheet with methodology reference
+  - Owner: TBD
+  - Estimated effort: 2-3 days
+
+---
+
+### Phase 3: Step 3 Module (Medium-term)
+
+#### High Priority
+- **ONPV-3.1**: Create `vulnerability-factors/` folder structure
+  - README.md with methodology overview
+  - config.yaml with QMS weights and data sources
+  - vulnerability_utils.py for common functions
+  - Owner: TBD
+  - Estimated effort: 1-2 days
+
+- **ONPV-3.2**: Integrate Climate Action Tracker (CAT) data
+  - Source CAT country ratings
+  - Map to TVP 188-country list
+  - Create country-level vulnerability scores
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+- **ONPV-3.3**: Integrate IEA sector pathway data
+  - Source IEA Net Zero scenario data
+  - Map sectors to TVP NACE classification
+  - Create sector-level vulnerability scores
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+#### Medium Priority
+- **ONPV-3.4**: Implement Quantified Management Scorecard (QMS)
+  - Define scoring rubric for Target Ambition
+  - Define scoring rubric for Disclosure Quality
+  - Define scoring rubric for Track Record
+  - Create composite QMS calculation
+  - Owner: TBD
+  - Estimated effort: 5-7 days
+
+- **ONPV-3.5**: Add Just Transition Readiness scoring
+  - Integrate MDB 5 Principles
+  - Create scoring methodology per principle
+  - Add to composite vulnerability calculation
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+- **ONPV-3.6**: Integrate SBTi and CDP data sources
+  - Source SBTi company database
+  - Source CDP disclosure scores
+  - Map to company-level management scores
+  - Owner: TBD
+  - Estimated effort: 5-7 days
+
+---
+
+### Phase 4: Step 4 Module (Medium-term)
+
+#### High Priority
+- **ONPV-4.1**: Create `attribution-factors/` folder structure
+  - README.md with methodology overview
+  - config.yaml with equity tiers and debt base rates
+  - attribution_utils.py for common functions
+  - Owner: TBD
+  - Estimated effort: 1-2 days
+
+- **ONPV-4.2**: Implement tiered equity attribution
+  - Script: 001_calculate_EquityAttribution.py
+  - Implement Tier 1/2/3 control factors
+  - Include engagement level assessment
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+- **ONPV-4.3**: Build debt attribution with distress multiplier
+  - Script: 002_calculate_DebtAttribution.py
+  - Implement base rate by credit quality
+  - Add covenant factor scoring
+  - Implement Z-Score based distress multiplier
+  - Owner: TBD
+  - Estimated effort: 5-7 days
+
+#### Medium Priority
+- **ONPV-4.4**: Add MDB instrument type adjustments
+  - Implement green bond discount
+  - Implement sustainability-linked bond discount
+  - Add adaptation activity type credits
+  - Owner: TBD
+  - Estimated effort: 2-3 days
+
+- **ONPV-4.5**: Create portfolio aggregation tools
+  - Script: 004_apply_PortfolioAttribution.py
+  - Sum attributed impacts across positions
+  - Generate portfolio-level reports
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+---
+
+### Phase 5: Integration Module (Future)
+
+#### Medium Priority
+- **ONPV-5.1**: Create end-to-end calculation pipeline
+  - Script: integration/calculate_differentiated_impact.py
+  - Chain Steps 1-4 calculations
+  - Allow step-by-step or full pipeline execution
+  - Owner: TBD
+  - Estimated effort: 5-7 days
+
+- **ONPV-5.2**: Create reporting templates
+  - Excel report template with all steps
+  - Summary dashboard visualization
+  - Comparison to benchmarks
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+- **ONPV-5.3**: Add validation and quality checks
+  - Cross-step consistency validation
+  - Range checks for all factors
+  - Automated testing for pipeline
+  - Owner: TBD
+  - Estimated effort: 3-5 days
+
+---
+
+### Data Sources Required
+
+| Step | Data Source | Availability | Action |
+|:---|:---|:---|:---|
+| Step 1 | TVP value-factors | Available | Direct use |
+| Step 2 | ENCORE | Public | Download and map |
+| Step 2 | SASB Materiality Map | Public | Download and map |
+| Step 3 | Climate Action Tracker | Public | API or scrape |
+| Step 3 | IEA Net Zero | Licensed | Acquire license |
+| Step 3 | SBTi Database | Public | Download |
+| Step 3 | CDP Scores | Licensed | Acquire license |
+| Step 4 | Bloomberg/Refinitiv | Licensed | Acquire license |
+| Step 4 | SEC EDGAR | Public | API access |
 
 ---
 
