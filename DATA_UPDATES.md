@@ -1,7 +1,7 @@
 # Data Update Procedures
 
 **WifOR Value Factors - Data Maintenance Guide**
-**Organization**: Transition Valuation Partnership under Greenings custodianship
+**Organization**: Transition Valuation Project under Greenings custodianship
 **Version**: 1.0
 **Last Updated**: 2026-01-02
 
