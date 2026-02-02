@@ -301,686 +301,292 @@ After conversion and inflation:
 
 ### 2. Air Pollution
 
-**File**: `220707_Air pollution_update.xlsx`
-**Script**: `008_241001_prepare_AirPollution_my.py`
+**Script**: `001_generate_air_pollution.py`
+**Replaces**: `220707_Air pollution_update.xlsx`
 
-#### Origin
-- **Primary Source**: German Federal Environment Agency (UBA) methodology
-- **Foundational Data**: NEEDS EU project
-- **Current Version**: 2022-07-07
-- **Update Frequency**: Biannual
+#### Generation Process
 
-#### Methodology: Four Damage Categories
+The `001_generate_air_pollution.py` script programmatically generates air pollution damage costs, replacing the previous static Excel file. It implements the UBA (German Federal Environment Agency) methodology, including an income elasticity-based value transfer to apply German base values to 188 countries.
 
-##### 1. Health Damages
-- **Impacts**: Respiratory and cardiovascular diseases
-- **Valuation**: Medical costs + productivity losses + pain & suffering
-- **Key Pollutants**: PM2.5, PM10 (particulate matter)
+#### Methodology Overview
 
-##### 2. Biodiversity Loss
-- **Impacts**: Ecosystem damage, species extinction
-- **Mechanism**: Acidification and nutrient deposition
-- **Key Pollutants**: NOx, SOx (nitrogen and sulfur oxides)
+The script calculates damage costs for six key pollutants across four environmental impact categories.
 
-##### 3. Crop Damages
-- **Impacts**: Agricultural yield reduction
-- **Valuation**: Market value of lost production
-- **Key Pollutants**: Ozone precursors (NOx, NMVOC)
+- **Pollutants**: PM2.5, PM10, NOx, SOx, NMVOC, NH3
+- **Damage Categories**: Health, Biodiversity, Crop, Material
 
-##### 4. Material Damages
-- **Impacts**: Corrosion, aesthetic degradation
-- **Assets**: Buildings, infrastructure
-- **Valuation**: Repair and maintenance costs
+The core of the methodology is to take base damage costs established for Germany and adjust them for other countries based on their GDP per capita, reflecting differences in willingness-to-pay for environmental quality and health.
 
-#### Pollutants Covered (6 total)
-- PM2.5: Fine particulate matter (<2.5 μm)
-- PM10: Coarse particulate matter (<10 μm)
-- NOx: Nitrogen oxides
-- SOx: Sulfur oxides
-- NMVOC: Non-methane volatile organic compounds
-- NH3: Ammonia
+#### Data Sources and Data Gathering
 
-#### Data Structure
-```
-Sheet: WifOR_form
-Index: Multi-level (pollutant, country_code)
-Column: Value (damage cost in USD/kg)
-```
+1.  **UBA Methodenkonvention 3.1 (Methodological Convention 3.1)**
+    *   **Data Provided**: Base damage costs for Germany (in EUR/tonne for the year 2020).
+    *   **Data Gathering Methodology**: The UBA's framework is a comprehensive national standard for assessing environmental costs. It synthesizes a wide range of data from national economic accounts, scientific studies, and environmental monitoring. The values are derived from detailed impact pathway assessments, which model the cause-and-effect chain from pollutant emission to final environmental or health impact, and then monetize these impacts using various economic valuation techniques (e.g., medical costs, productivity loss, repair costs).
 
-#### Country Adjustment
-- Base values from European context
-- Adjusted for population density
-- Scaled by income level (Value of Statistical Life correlation)
+2.  **NEEDS (New Energy Externalities Developments for Sustainability) EU Project**
+    *   **Data Provided**: Dose-response functions and other foundational data used in impact pathway assessments.
+    *   **Data Gathering Methodology**: As a major EU research project, NEEDS collected and harmonized data from numerous sources, including administrative records, health surveys, and environmental monitoring stations across Europe. It employed a range of participatory and survey-based tools to gather primary data and ensure its reliability through triangulation.
+
+3.  **World Bank Open Data**
+    *   **Data Provided**: GDP per capita (PPP, current international $) and GDP deflators.
+    *   **Data Gathering Methodology**: The World Bank compiles economic data from the national accounts of its member countries. The data is standardized to ensure cross-country comparability. GDP and PPP data are collected through annual surveys of national statistical offices.
 
 #### Value Transfer Mechanism
 
-**Method**: **Income Elasticity Adjustment (for VSL)**
+To adapt the German-centric UBA base costs for global application, the script employs an **income elasticity adjustment**.
 
-**Source Studies**:
-- UBA (German Federal Environment Agency) - European base values
-- OECD VSL estimates
-- NEEDS EU project
+*   **Formula**: `V_target = V_base × (GDP_target / GDP_base) ^ elasticity`
+    *   `V_target`: The calculated damage cost for the target country.
+    *   `V_base`: The base damage cost from UBA for Germany.
+    *   `GDP_target`: GDP per capita of the target country.
+    *   `GDP_base`: GDP per capita of Germany.
+    *   `elasticity`: An income elasticity parameter (set to 1.0 in the script, based on research by Viscusi & Aldy and OECD meta-analyses), which represents how willingness-to-pay for health and environmental quality changes with income.
 
-**Transfer Method**: **Income Elasticity of Willingness-to-Pay**
+This method allows for a systematic and economically grounded way to estimate damage costs in countries where detailed local studies are not available.
 
-**Formula**:
-```
-VSL[Country] = VSL[Base] × (GDP_per_capita[Country] / GDP_per_capita[Base])^elasticity
-```
+#### Final Output
 
-Where:
-- `VSL` = Value of Statistical Life
-- `elasticity` = Income elasticity parameter (typically 0.8-1.2)
-- Higher income → higher WTP to avoid health risks
-
-**Application to Air Pollution**:
-```
-Damage[Country, Pollutant] = Mortality_Risk[Pollutant]
-                            × VSL[Country]
-                            + Morbidity_Costs[Country, Pollutant]
-```
-
-**Rationale**:
-- **Health Valuation**: People in wealthier countries willing to pay more to avoid premature death
-- **Evidence-Based**: Extensive OECD research on income-VSL relationship
-- **Context-Sensitive**: Adjusts for economic development levels
-
-**Example** (PM2.5 health damages):
-```
-Base (Germany): USD 100/kg
-USA (GDP per capita ~$70k, elasticity 1.0): USD 100 × (70/50)^1.0 = USD 140/kg
-India (GDP per capita ~$2k, elasticity 1.0): USD 100 × (2/50)^1.0 = USD 4/kg
-```
-
-**Additional Adjustments**:
-- **Population Density**: Higher density → more people exposed → higher aggregate damage
-- **Urban/Rural**: Urban areas typically have higher exposure
-
-**Reference**: Impact Valuation Sprint Report 2024 (line 7236):
-> "Application of value transfer to translate WTP to different countries and check for income elasticity sensitivity."
-
-**Transparency Note**: Specific elasticity parameters not documented in input files (see BACKLOG.md Q8)
-
-#### Public Databases
-- **UBA**: https://www.probas.umweltbundesamt.de/
-- **NEEDS**: https://cordis.europa.eu/project/id/502687
-- **openLCA**: https://www.openlca.org/project/needs/
-
-#### Ecosystem Comparison
-- **Methodology Alignment**: Aligned with UBA's best practice, compatible with NEEDS.
-- **Differences from**: Other providers might use different exposure-response functions or economic valuation parameters.
-- **Convergence status**: Medium (UBA is a key reference, but global application needs careful adjustment)
-
-#### Value Commission Assessment
-- **Transparency**: High (UBA methodology is well-documented)
-- **Confidence criteria**: Met (based on extensive scientific research)
-- **Value note**: Base for many European air pollution damage costs
+The script generates a detailed output file (`air_pollution_damage_costs_detailed.h5` and `.xlsx`) containing the calculated damage costs for each pollutant, country, and damage category, as well as a summary file with the total damage costs.
 
 ---
 
 ### 3. Waste Management
 
-**File**: `220509_Waste figures merged_update.xlsx`
-**Script**: `007_241001_prepare_Waste_my.py`
+**Script**: `002_generate_waste.py`
+**Replaces**: `220509_Waste figures merged_update.xlsx`
 
-#### Origin
-- **Mixed Sources**:
-  - IPCC (greenhouse gas emissions)
-  - EXIOPOL (European environmental accounts)
-  - PwC (disamenity costs)
-- **Current Version**: 2022-05-09
-- **Update Frequency**: Biannual
+#### Generation Process
 
-#### Methodology: Three Impact Pathways
+The `002_generate_waste.py` script calculates damage costs for waste management, categorized by waste type (hazardous, non-hazardous) and treatment method (incineration, landfill, recovery). It replaces a previous Excel-based calculation with a transparent and reproducible Python script.
 
-##### 1. Air Emissions & GHG
-- **Incineration**: Air pollutants (PM, NOx, SOx)
-  - Values from UBA air pollution methodology
-- **Landfill**: Methane emissions (GHG)
-  - Emission factors from IPCC guidelines
-  - Valued using Social Cost of Carbon
+#### Methodology Overview
 
-##### 2. Disamenity
-- **Impact**: Reduced property values near waste sites
-- **Method**: Hedonic pricing (willingness-to-pay)
-- **Data**: Real estate value studies
-- **Source**: PwC research
+The script uses a mixed-method approach, combining data from multiple sources to value the different impact pathways of waste management.
 
-##### 3. Leachate Contamination
-- **Impact**: Soil and groundwater pollution
-- **Method**: Risk-based model (HARAS)
-- **Valuation**: Clean-up and remediation costs
-- **Substances**: Heavy metals, organic compounds
+*   **Landfill**: The cost is a sum of GHG emissions from methane, disamenity costs (nuisance to nearby residents), and the risk of leachate contamination.
+*   **Incineration**: The cost is based on the air pollution damages from emissions.
+*   **Recovery**: This is assumed to have a zero or negative cost, representing an avoided impact, though it is currently set to zero as a conservative assumption.
 
-#### Waste Categories (6 total)
-Coefficients calculated for:
-- Waste_hazardous_incinerated
-- Waste_hazardous_landfill
-- Waste_hazardous_recovered (zero cost)
-- Waste_nonhazardous_incinerated
-- Waste_nonhazardous_landfill
-- Waste_nonhazardous_recovered (zero cost)
+#### Data Sources and Data Gathering
 
-**Note**: Recovery assigned zero damage cost (assumption: proper recycling has minimal external cost)
+1.  **IPCC Emission Factor Database (EFDB)**
+    *   **Data Provided**: Methane emission factors for different types of landfills.
+    *   **Data Gathering Methodology**: The EFDB is a repository of emission factors collected from various sources, including scientific literature, industry measurements, and national inventory reports. Data is peer-reviewed and must meet quality standards defined in the IPCC Guidelines for National Greenhouse Gas Inventories.
 
-#### Data Structure
-```
-Sheets: 4 (one per treatment × hazard combination)
-Columns: country_code, costs (USD/kg)
-```
+2.  **EXIOBASE**
+    *   **Data Provided**: Environmentally-extended multi-regional input-output tables, which provide a detailed picture of the economic and environmental flows between industries and countries.
+    *   **Data Gathering Methodology**: EXIOBASE is constructed by harmonizing and detailing supply and use tables from multiple countries. It uses a top-down approach, reconciling national-level data with global economic estimates and then disaggregating it to a high level of detail.
 
-#### Public Databases
-- **IPCC**: https://www.ipcc-nggip.iges.or.jp/EFDB/main.php
-- **EXIOBASE**: https://www.exiobase.eu/
+3.  **UBA (German Federal Environment Agency)**
+    *   **Data Provided**: Air pollution damage costs used to value the emissions from waste incineration.
+    *   **Data Gathering Methodology**: See the "Air Pollution" section for a detailed explanation of the UBA's data gathering methodology.
 
-#### Ecosystem Comparison
-- **Methodology Alignment**: Uses IPCC for GHG, EXIOPOL for accounts. Integrates specific PwC research.
-- **Differences from**: Other providers may use different waste composition data or economic valuation methods for disamenity/leachate.
-- **Convergence status**: Low to Medium (due to mixed-method approach)
+4.  **PwC Research**
+    *   **Data Provided**: Disamenity costs associated with landfills.
+    *   **Data Gathering Methodology**: This data is from proprietary research conducted by PwC, likely based on hedonic pricing studies that analyze the impact of proximity to waste sites on property values.
 
-#### Value Commission Assessment
-- **Transparency**: Medium (some components publicly documented, others from proprietary research)
-- **Confidence criteria**: Partial (IPCC is high, but disamenity/leachate components may vary)
-- **Value note**: Provides granular categories often missing in broader assessments
+#### Final Output
+
+The script generates a detailed output file (`waste_damage_costs_detailed.h5` and `.xlsx`) with damage costs for each waste category, treatment method, and country, as well as a summary file.
 
 ---
 
 ### 4. Water Consumption
 
-**File**: `220511_Water consumption_update.xlsx`
-**Script**: `009_241001_prepare_WaterConsumption_my.py`
+**Script**: `003_generate_water_consumption.py`
+**Replaces**: `220511_Water consumption_update.xlsx`
+**Status**: EXPERIMENTAL
 
-#### Origin
-- **Academic Research**:
-  - Ligthart & van Harmelen (2019)
-  - Debarre et al. (2022)
-- **Current Version**: 2022-05-11
-- **Maturity Status**: Experimental (high uncertainty)
+#### Generation Process
 
-#### Methodology: Dual Approach
+The `003_generate_water_consumption.py` script calculates the damage costs of freshwater consumption. It replaces a previous Excel-based calculation with a Python script that, while still experimental, is more transparent. The methodology has high uncertainty and should be used with caution.
 
-##### 1. Economic Damages
-- **Impact**: Agricultural output loss from water scarcity
-- **Method**: Shadow pricing
-  - Global baseline shadow price for water
-  - Adjusted using AWARE factors
+#### Methodology Overview
 
-##### 2. Health Damages
-- **Impact**: Domestic water deprivation effects on health
-- **Metric**: Disability-Adjusted Life Years (DALYs)
-  - Years of life lost (mortality)
-  - Years lived with disability (morbidity)
-- **Conversion**: DALY × Value of Statistical Life Year
+The script uses a dual approach to value water consumption, capturing both economic and health-related impacts.
 
-#### AWARE Factors
-- **Purpose**: Country-specific water scarcity adjustment
-- **Method**: Assess available water minus environmental flow requirements
-- **Source**: WULCA (Water Lifecycle Assessment) working group
-- **Application**: Scales global values to local context
+*   **Economic Damages**: Calculated using a shadow pricing method, where the price of water is adjusted based on local water scarcity.
+*   **Health Damages**: Valued using the Disability-Adjusted Life Years (DALYs) approach, which quantifies the health burden of inadequate water access.
 
-#### Data Structure
-```
-Sheet: Ergebnisse_final
-Columns: country_code, Total damages (USD/m³)
-Note: Total damages = Economic + Health
-```
+#### Data Sources and Data Gathering
 
-#### Known Issues
-- **High Uncertainty**: Results "hard to explain" per README
-- **Experimental Status**: Methodology under review
-- **Future Work**: See BACKLOG.md Q1 for improvement suggestions
+1.  **WULCA AWARE (Available WAter REmaining)**
+    *   **Data Provided**: Water scarcity characterization factors (AWARE factors).
+    *   **Data Gathering Methodology**: AWARE is a consensus-based method developed by the WULCA (Water Use in Life Cycle Assessment) working group. It quantifies the relative available water remaining per area after the demands of humans and ecosystems have been met. The calculation is based on a global hydrological model (WaterGAP) and provides a measure of water scarcity from 0.1 (abundant) to 100 (scarce).
 
-#### Public Databases
-- **AWARE**: https://wulca-waterlca.org/aware/
+2.  **Global Burden of Disease (GBD) Study**
+    *   **Data Provided**: Disability-Adjusted Life Years (DALYs) associated with unsafe water sources.
+    *   **Data Gathering Methodology**: The GBD study is a comprehensive global research program that assesses mortality and disability from major diseases, injuries, and risk factors. It synthesizes data from a wide range of sources, including vital registration systems, household surveys, and health facility records, using complex statistical modeling to estimate health burdens for all regions of the world.
 
-#### Ecosystem Comparison
-- **Methodology Alignment**: Uses academic research (Ligthart & van Harmelen, Debarre et al.) and AWARE factors.
-- **Differences from**: Other water valuation methods (e.g., using only scarcity indices, or different DALY monetization approaches).
-- **Convergence status**: Low (experimental nature, high uncertainty)
+3.  **Academic Research (Ligthart & van Harmelen, 2019; Debarre et al., 2022)**
+    *   **Data Provided**: The conceptual basis for the shadow pricing and health damage methodologies.
+    *   **Data Gathering Methodology**: These are academic publications that provide the theoretical framework and models for valuing water consumption, rather than raw data.
 
-#### Value Commission Assessment
-- **Transparency**: Medium (academic sources cited, but internal calculation details may need further documentation)
-- **Confidence criteria**: Partial (experimental status indicates ongoing refinement)
-- **Value note**: Innovative approach combining economic and health damages
+#### Final Output
+
+The script generates an experimental output file (`water_consumption_damage_costs_EXPERIMENTAL.h5` and `.xlsx`) containing the economic, health, and total damage costs per cubic meter of water consumed for each country.
 
 ---
 
 ### 5. Land Use
 
-**File**: `230317_Landuse_update_ZK.xlsx`
-**Script**: `010_241001_prepare_LandUse_my.py`
+**Script**: `004_generate_land_use.py`
+**Replaces**: `230317_Landuse_update_ZK.xlsx`
 
-#### Origin
-- **Primary Framework**: Environmental Priority Strategies (EPS)
-  - Original: 1992 (Steen)
-  - Updated: 2015
-- **Characterization**: LANCA (Land Use Indicator Value Calculation)
-- **Current Version**: 2023-03-17
+#### Generation Process
 
-#### Methodology: EPS System
+The `004_generate_land_use.py` script generates damage costs associated with land use change. It replaces a previous Excel-based calculation with a Python script that implements the Environmental Priority Strategies (EPS) methodology, adjusted with LANCA characterization factors.
 
-The EPS system monetizes ecosystem service loss from land conversion across four categories:
+#### Methodology Overview
 
-##### 1. Working Capacity
-- **Impact**: Urban heat island effect on labor productivity
-- **Mechanism**: Increased temperatures reduce work efficiency
-- **Valuation**: Lost labor hours × wage rates
+The script calculates the value of ecosystem services lost when natural land is converted to other uses. It covers several land use types and monetizes the loss of four key ecosystem services.
 
-##### 2. Water Treatment
-- **Impact**: Loss of natural filtration services
-- **Alternative**: Constructed water treatment facilities
-- **Valuation**: Replacement cost of built infrastructure
+*   **Land Use Types**: Urban, Arable, Permanent Crops, Pasture, Forest, Wetland, and Other Natural Land.
+*   **Ecosystem Services Valued**: Working Capacity, Water Treatment, Crop Growth, and Biodiversity.
 
-##### 3. Crop Growth
-- **Impact**: Soil quality degradation, pollination loss
-- **Mechanism**: Reduced agricultural productivity
-- **Valuation**: Market value of yield reduction
+The methodology uses global average values from the EPS system and adjusts them to local conditions using LANCA regional factors and a GDP-based income elasticity adjustment.
 
-##### 4. Biodiversity
-- **Impact**: Species habitat loss
-- **Method**: Willingness-to-pay for preservation
-- **Valuation**: Conservation and restoration costs
+#### Data Sources and Data Gathering
 
-#### LANCA Characterization
-- **Purpose**: Adjust global EPS values to local conditions
-- **Factors**: Climate, soil type, current land use
-- **Application**: Country-specific multiplication factors
+1.  **EPS (Environmental Priority Strategies) System**
+    *   **Data Provided**: Base values for ecosystem service loss (in EUR per hectare per year).
+    *   **Data Gathering Methodology**: The EPS system, developed by the Swedish Environmental Research Institute (IVL), is a Life Cycle Assessment (LCA) based method. It aggregates environmental impacts into a single unit (Environmental Load Unit, ELU), which is then monetized. The data is derived from a comprehensive inventory of materials and processes and their environmental impacts.
 
-#### Land Use Types
-Multiple categories (varies by data):
-- Forestry
-- Agriculture (multiple types)
-- Urban development
-- Industrial use
-- Others
+2.  **LANCA (Land Use Indicator Value Calculation) Model**
+    *   **Data Provided**: Regional characterization factors to adjust the global EPS values.
+    *   **Data Gathering Methodology**: LANCA is a map-based model that assesses land use impacts on a local to global scale. It uses geo-ecological classification systems and area-specific input data to calculate characterization factors for various impact categories, including biodiversity.
 
-#### Data Structure
-```
-Sheet: Ergebnisse_final
-Columns: country_code, [land_type_1], [land_type_2], ...
-Each column contains damage cost (USD/ha)
-```
+3.  **Steen (2020)**
+    *   **Data Provided**: The underlying environmental valuation methodology for the EPS system.
+    *   **Data Gathering Methodology**: This is an academic publication that provides the theoretical framework for the EPS system.
 
-#### Public Databases
-- **EPS**: https://lifecyclecenter.se/projects/eps-environmental-priority-strategies-in-product-development/
-- **LANCA**: https://www.ibp.fraunhofer.de/en/expertise/life-cycle-engineering/applied-methods/lanca.html
+#### Final Output
 
-#### Ecosystem Comparison
-- **Methodology Alignment**: Uses established EPS and LANCA frameworks.
-- **Differences from**: Other land use valuation approaches (e.g., focusing solely on biodiversity, or using different impact categories).
-- **Convergence status**: Medium (EPS/LANCA are well-known, but their specific application here is WifOR's)
-
-#### Value Commission Assessment
-- **Transparency**: High (EPS/LANCA are publicly documented frameworks)
-- **Confidence criteria**: Met (based on recognized life cycle impact assessment methods)
-- **Value note**: Provides detailed breakdown of land use impacts
+The script generates a detailed output file (`land_use_damage_costs_detailed.h5` and `.xlsx`) containing the damage costs for each land use type, ecosystem service, and country, as well as a summary file.
 
 ---
 
 ### 6. Water Pollution
 
-**File**: `230324_WaterPollution_Mon_Coef_Final_DC.xlsx`
-**Script**: `013_241014_prepare_WaterPol_my.py`
+**Script**: `005_generate_water_pollution.py`
+**Replaces**: `230324_WaterPollution_Mon_Coef_Final_DC.xlsx`
+**Status**: EXPERIMENTAL
 
-#### Origin
-- **Methodology**:
-  - Steen (2020): Nitrogen and Phosphorus
-  - USEtox model: Heavy metals
-- **Generation**: Internal WifOR calculations
-- **Current Version**: 2023-03-24
-- **Maturity Status**: Experimental
+#### Generation Process
 
-#### Methodology by Pollutant Type
+The `005_generate_water_pollution.py` script calculates damage costs for water pollution, covering both nutrient pollution (eutrophication) and heavy metal contamination. It replaces a previous Excel-based calculation with a more transparent, albeit still experimental, Python script.
 
-##### 1. Nutrients (N, P) - Steen 2020
-- **Impact**: Freshwater eutrophication
-- **Mechanisms**:
-  - Algal blooms
-  - Oxygen depletion
-  - Fish kills
-- **Damages**:
-  - Reduced fish production (market value)
-  - Biodiversity loss (willingness-to-pay)
-  - Water treatment costs
+#### Methodology Overview
 
-##### 2. Heavy Metals - USEtox Model
-- **Impact**: Human health and ecotoxicity
-- **Pathways**:
-  - Drinking water contamination
-  - Bioaccumulation in fish
-  - Direct aquatic toxicity
-- **Valuation**:
-  - Health: DALYs × VSL
-  - Ecosystem: Potentially disappeared fraction of species
+The script uses a hybrid approach, combining different methodologies for different types of pollutants.
 
-#### Value Transfer Mechanism
+*   **Nutrients (Nitrogen, Phosphorus)**: The damage costs are based on the methodology of Steen (2020), which focuses on the impacts of eutrophication.
+*   **Heavy Metals**: The script uses the USEtox model for characterization, combined with a damage cost to value the impacts.
+*   **Value Transfer**: The script uses a Purchasing Power Parity (PPP) adjustment to transfer Willingness-to-Pay (WTP) values from a Swedish context (Ahlroth, 2009) to other countries.
+*   **Water Scarcity Adjustment**: The final damage costs are adjusted based on local water scarcity using AWARE factors.
 
-**Source Study**: Ahlroth (2009) - Sweden
+#### Data Sources and Data Gathering
 
-**Base WTP Values (Sweden)**:
-- **Freshwater Phosphorus**: USD 136/kg
-- **Marine Phosphorus**: USD 68/kg
-- **Marine Nitrogen**: USD 9/kg
+1.  **Steen (2020)**
+    *   **Data Provided**: The methodology for valuing the impacts of nutrient pollution (eutrophication).
+    *   **Data Gathering Methodology**: An academic publication providing a framework for valuation.
 
-**Transfer Method**: **Purchasing Power Parity (PPP) Adjustment**
+2.  **USEtox Model**
+    *   **Data Provided**: Characterization factors for heavy metals.
+    *   **Data Gathering Methodology**: USEtox is a scientific consensus model that provides characterization factors for human and ecotoxicological impacts of chemical emissions. It is based on a comprehensive database of chemical properties and environmental fate and transport models.
 
-**Formula**:
-```
-Value[Country] = Value[Sweden] × (PPP[Country] / PPP[Sweden])
-```
+3.  **Ahlroth (2009)**
+    *   **Data Provided**: Base Willingness-to-Pay (WTP) values for nutrient pollution in a Swedish context.
+    *   **Data Gathering Methodology**: An academic study that likely used contingent valuation or other economic survey methods to elicit WTP values from the public.
 
-**Rationale**:
-- WTP for water quality varies with economic conditions
-- PPP adjustment accounts for differences in purchasing power across countries
-- Higher PPP ratio → higher damage valuation (wealthier countries value environmental quality more)
+4.  **WULCA AWARE (Available WAter REmaining)**
+    *   **Data Provided**: Water scarcity characterization factors (AWARE factors).
+    *   **Data Gathering Methodology**: See the "Water Consumption" section for a detailed explanation.
 
-**Example**:
-```
-Sweden: P = USD 136/kg (base)
-USA (PPP ratio ~1.0): P = USD 136 × 1.0 = USD 136/kg
-India (PPP ratio ~0.3): P = USD 136 × 0.3 = USD 41/kg
-```
+5.  **World Bank Open Data**
+    *   **Data Provided**: Purchasing Power Parity (PPP) data for the value transfer mechanism.
+    *   **Data Gathering Methodology**: See the "Air Pollution" section for a detailed explanation.
 
-**Reference**: Impact Valuation Sprint Report 2024 (lines 9720-9742):
-> "To transfer these values from Sweden to other countries, we adjust the WTP values by PPP."
+#### Final Output
 
-**Transparency Note**: PPP indices and base years used are not explicitly documented in input files (see BACKLOG.md Q8)
-
-#### Pollutants Covered (11 total)
-- **Nutrients**: Nitrogen (N), Phosphorus (P)
-- **Heavy Metals**: Arsenic (As), Cadmium (Cd), Mercury (Hg), Chromium (Cr), Lead (Pb), Nickel (Ni), Copper (Cu), Zinc (Zn), Antimony (Sb)
-
-#### Water Scarcity Adjustment
-- Global base values scaled by country water scarcity
-- More severe impacts in water-stressed regions
-- Based on AWARE factors
-
-#### Data Structure
-```
-Sheet: Results
-Index: Multi-level (pollutant, country_code)
-Column: Value (damage cost in USD/kg)
-```
-
-#### Known Issues
-- **Experimental Status**: High uncertainty
-- **Difficult Results**: Some coefficients hard to validate
-- **Ongoing Research**: Methodology under refinement
-
-#### Public Databases
-- **USEtox**: https://usetox.org
-
-#### Ecosystem Comparison
-- **Methodology Alignment**: Integrates Steen (2020) and USEtox, recognized frameworks for specific pollutants.
-- **Differences from**: Other water pollution models might use different characterization factors or valuation approaches.
-- **Convergence status**: Medium (USEtox is standardized, but overall approach is mixed)
-
-#### Value Commission Assessment
-- **Transparency**: Medium (USEtox is public, Steen's work is academic, internal calculations need documentation)
-- **Confidence criteria**: Partial (experimental status for overall approach)
-- **Value note**: Combines well-established models for specific pollutants
+The script generates an experimental output file (`water_pollution_damage_costs_EXPERIMENTAL.h5` and `.xlsx`) containing the damage costs for each pollutant and country.
 
 ---
 
 ### 7. Training
 
-**File**: `220529_training_value_per_hour_bysector.h5`
 **Script**: `014_241016_prepare_Training_my.py`
+**Replaces**: `220529_training_value_per_hour_bysector.h5`
 
-#### Origin
-- **Theoretical Foundation**: Returns to schooling research
-- **Key Reference**: Psacharopoulos & Patrinos (2018)
-- **Generation**: Internal WifOR calculations
-- **Current Version**: 2022-05-29
-- **Unique Feature**: ONLY POSITIVE coefficient (benefit, not damage)
+#### Generation Process
 
-#### Methodology: Human Capital Investment
+The `014_241016_prepare_Training_my.py` script generates coefficients for the economic benefit of employee training. This is the only value factor with a positive coefficient, as it represents a benefit to society rather than a damage cost. The script replaces a previous HDF5 file with a more transparent calculation process.
 
-##### Conceptual Framework
-Training as investment in human capital, similar to physical capital:
+#### Methodology Overview
 
-1. **Productivity Increase**: Training improves worker output
-2. **Wage Premium**: Manifests as higher wages over career
-3. **Present Value**: Future wage gains discounted to present
+The script is based on the human capital theory, which treats training as an investment that yields returns in the form of increased productivity and higher wages.
 
-##### Calculation Steps
+*   **Core Concept**: The value of training is the present value of the future wage increases that result from it.
+*   **Calculation Steps**:
+    1.  Establish a baseline for the returns to education using a global meta-analysis.
+    2.  Equate training hours to formal education years.
+    3.  Project the lifetime value of the wage premium from training.
+    4.  Adjust the value for different economic sectors and countries using PPP and GVA data.
 
-###### Step 1: Returns to Education Baseline
-- **Source**: Global meta-analysis (Psacharopoulos & Patrinos)
-- **Finding**: ~8-10% wage increase per year of schooling
-- **Variation**: Higher in developing countries, lower in developed
+#### Data Sources and Data Gathering
 
-###### Step 2: Training Equivalence
-- **Assumption**: Training hours equivalent to formal education
-- **Conversion**: 1 year schooling ≈ ~1,800 hours
-- **Hourly Return**: Annual return / 1,800
+1.  **Psacharopoulos & Patrinos (2018), "Returns to investment in education: a global update"**
+    *   **Data Provided**: A global meta-analysis of the returns to schooling, finding an average 9-10% wage increase per additional year of schooling.
+    *   **Data Gathering Methodology**: This is a comprehensive review of 1120 estimates from 139 countries between 1950 and 2014, using the Mincerian earnings function and full discounting method.
 
-###### Step 3: Lifetime Value Projection
-```
-Training_Value = Hourly_Wage
-                × Return_Rate_per_Hour
-                × Remaining_Working_Years
-                × Discount_Factor
-```
+2.  **OECD Education Data**
+    *   **Data Provided**: Data on education systems, including sector-specific wage premiums.
+    *   **Data Gathering Methodology**: The OECD collects data on the structure, finances, and performance of education systems from its member countries, following international standards to ensure comparability.
 
-###### Step 4: Sector Adjustment
-- **Variation**: Different returns by economic sector
-- **High Returns**: Knowledge-intensive sectors (IT, finance)
-- **Lower Returns**: Labor-intensive sectors (construction)
-- **Data**: Sector-specific wage premiums from education data
+3.  **World Bank Open Data**
+    *   **Data Provided**: Purchasing Power Parity (PPP) and Gross Value Added (GVA) per worker data, used for value transfer and sector-specific adjustments.
+    *   **Data Gathering Methodology**: See the "Air Pollution" section for a detailed explanation.
 
-#### Data Structure
-```python
-# HDF5 Key: 'value_per_hour'
-# Structure: Sector × Country matrix
-# Column: "value_per_hour_GVA_2020USD_PPP"
-# Values: Positive (benefits in USD/hour)
-```
+#### Final Output
 
-#### Value Transfer Mechanism
-
-**Method**: **Purchasing Power Parity (PPP) Adjustment based on GVA**
-
-**Evidence**: Column name explicitly includes `_PPP` suffix
-
-**Transfer Approach**:
-1. **Base Calculation**: Returns to education estimated using sector-specific GVA (Gross Value Added)
-2. **PPP Adjustment**: Values adjusted for purchasing power differences across countries
-3. **Sector Differentiation**: Each country-sector combination has unique value
-
-**Formula** (conceptual):
-```
-Value_per_hour[Country, Sector] = Base_Return[Sector]
-                                  × GVA_per_worker[Country, Sector]
-                                  × PPP_adjustment[Country]
-```
-
-**Rationale**:
-- **Economic Context**: Training value tied to local wage levels and productivity
-- **Sector Variation**: High-skill sectors (finance, tech) show higher returns than low-skill sectors
-- **PPP Necessity**: Ensures cross-country comparability in real economic terms
-
-**Example**:
-```
-IT Sector:
-  USA (high GVA, PPP~1.0):     USD 50/hour training value
-  Germany (high GVA, PPP~0.9): USD 45/hour training value
-  India (lower GVA, PPP~0.3):  USD 15/hour training value
-
-Construction Sector (lower skill premium):
-  USA:     USD 20/hour
-  Germany: USD 18/hour
-  India:   USD 6/hour
-```
-
-**Data Source**: Internal WifOR calculations based on:
-- Psacharopoulos & Patrinos (2018) - Returns to education research
-- Sector-specific GVA data
-- PPP indices (year not specified in input file)
-
-**Transparency Note**: Full calculation methodology not documented in input files (see BACKLOG.md Q10)
-
-#### Interpretation
-- **Positive Sign**: Training adds value (opposite of damage costs)
-- **Sector Variation**: Only indicator with sector-specific values
-- **Per Hour**: Flexible unit for any training duration
-
-#### Public Databases
-- **OECD Education**: https://www.oecd.org/education/data/
-- **Returns to Education**: https://www.nationmaster.com/country-info/stats/Education
-
-#### Ecosystem Comparison
-- **Methodology Alignment**: Grounded in established "returns to schooling" literature.
-- **Differences from**: Other human capital valuation methods may use different metrics (e.g., skill premiums, job satisfaction).
-- **Convergence status**: Low to Medium (due to "open methodological questions" and highly specific hourly valuation)
-
-#### Value Commission Assessment
-- **Transparency**: Medium (academic literature is public, but internal calculation details need further documentation)
-- **Confidence criteria**: Partial (rated "Average" in README due to open methodological questions)
-- **Value note**: Innovative approach to monetize human capital benefits
+The script generates an output file (`training_value_per_hour.h5` and `.xlsx`) containing the monetized benefit of one hour of training for each country and economic sector.
 
 ---
 
 ### 8. Occupational Health & Safety (OHS)
 
-**File**: `220616_monetization_value_per_incident_NEW.xlsx`
-**Script**: `015_241016_prepare_OHS_my.py`
+**Script**: `006_generate_ohs.py`
+**Replaces**: `220616_monetization_value_per_incident_NEW.xlsx`
 
-#### Origin
-- **Methodology**: Health economics (DALY approach)
-- **Data Sources**:
-  - Eurostat (incident rates)
-  - Global Burden of Disease (disability weights)
-- **Generation**: Internal WifOR calculations
-- **Current Version**: 2022-06-16
-- **Maturity Status**: Well Established
+#### Generation Process
 
-#### Methodology: DALY-Based Valuation
+The `006_generate_ohs.py` script calculates the damage costs of occupational health and safety incidents. It replaces a previous Excel-based calculation with a Python script that implements a DALY-based valuation methodology.
 
-##### Disability-Adjusted Life Years (DALYs)
-Combines two components:
-```
-DALY = YLL + YLD
+#### Methodology Overview
 
-Where:
-- YLL = Years of Life Lost (fatal incidents)
-- YLD = Years Lived with Disability (non-fatal incidents)
-```
+The script calculates the monetary value of harm from workplace incidents by quantifying the Disability-Adjusted Life Years (DALYs) lost.
 
-##### Fatal Incidents
-```
-YLL = (Life_Expectancy - Age_at_Death) × Discount_Factor
+*   **DALY Calculation**: `DALY = YLL (Years of Life Lost) + YLD (Years Lived with Disability)`
+*   **Monetization**: The calculated DALYs are multiplied by a Value of a Statistical Life Year (VSLY) to arrive at a monetary damage cost.
+*   **Value Transfer**: The script can be configured to use either a single global VSLY for all countries (the "ethical" approach) or an income-adjusted VSLY based on the country's GDP per capita (the "Willingness-to-Pay" approach).
 
-Where:
-- Life_Expectancy: Country-specific (WHO data)
-- Age_at_Death: Average age for occupational fatalities
-- Discount_Factor: Typically 3% annual discount rate
-```
+#### Data Sources and Data Gathering
 
-##### Non-Fatal Incidents
-```
-YLD = Duration × Disability_Weight × Discount_Factor
+1.  **Eurostat**
+    *   **Data Provided**: Data on the incidence rates of fatal and non-fatal occupational accidents.
+    *   **Data Gathering Methodology**: Eurostat collects data from the national statistical authorities of EU member states. The data is harmonized according to the European Statistics on Accidents at Work (ESAW) methodology to ensure comparability.
 
-Where:
-- Duration: Time with disability (temporary or permanent)
-- Disability_Weight: Severity (0=perfect health, 1=death)
-  - Injury: 0.1-0.4 (temporary disability)
-  - Illness: 0.2-0.8 (chronic conditions)
-- Source: Global Burden of Disease study
-```
+2.  **Global Burden of Disease (GBD) Study**
+    *   **Data Provided**: Disability weights for various health states, which are used to calculate the Years Lived with Disability (YLD).
+    *   **Data Gathering Methodology**: See the "Water Consumption" section for a detailed explanation of the GBD's data gathering methodology.
 
-##### Monetization
-```
-Monetary_Value = DALY × Value_per_DALY
+3.  **World Health Organization (WHO)**
+    *   **Data Provided**: Life expectancy data for each country, which is used to calculate the Years of Life Lost (YLL).
+    *   **Data Gathering Methodology**: The WHO calculates life expectancy from life tables, which are constructed using sex- and age-specific death rates from national civil registration systems and other sources.
 
-Where:
-- Value_per_DALY: ~$200,000 (Value of Statistical Life Year)
-- Varies by country income level
-- Based on revealed/stated preference studies
-```
+#### Final Output
 
-#### Incident Categories (4 total)
-- **Injury_nonfatal**: Workplace accidents, temporary disability
-- **Disease_Illness_nonfatal**: Occupational diseases, chronic conditions
-- **Injury_fatality**: Fatal workplace accidents
-- **Disease_Illness_fatality**: Fatal occupational diseases
-
-**Note**: Fatality categories use same base DALY value (YLL), but distinguished for data tracking
-
-#### Data Structure
-```
-Sheet: Fatality
-Columns: country_code, USD/Fatality
-
-Sheet: Nonfatal
-Columns: country_code, USD/Injury, USD/Illness
-```
-
-#### Country Variation
-- **Income-Based**: Higher VSL in high-income countries
-- **Typical Range**: $50,000-$500,000 per DALY
-- **USA Baseline**: ~$200,000 per DALY
-
-#### Value Transfer Mechanism
-
-**Method**: **Global Value Transfer with Simplified Approach**
-
-**Approach**: Single global DALY value applied across all countries (USD 200,000 per DALY)
-
-**Formula**:
-```
-Damage[Country, Incident_Type] = DALY[Incident_Type] × USD 200,000
-```
-
-**Rationale for Global Value**:
-- **Ethical Stance**: Equal value of human life regardless of country income
-- **Simplicity**: Avoids complex country-specific adjustments
-- **Conservative**: Middle-ground estimate suitable for global application
-
-**Alternative Approach** (not currently used):
-```
-Value_per_DALY[Country] = Base_DALY_Value × (GDP_per_capita[Country] / GDP_per_capita[Base])^elasticity
-```
-
-**Current Implementation**: No country-specific adjustment applied
-
-**Trade-offs**:
-- **Advantage**: Ethical consistency, simpler methodology
-- **Limitation**: May overestimate impacts in low-income countries, underestimate in high-income countries
-- **Debate**: Ongoing discussion in impact valuation community about equity vs. WTP-based approaches
-
-**Reference**: Impact Valuation Sprint Report 2024 (line 3088):
-> "assumes a global value transfer mechanism to estimate a staggering total global damage of USD 14.2 trillion"
-
-**Methodological Note**:
-- This differs from other indicators (Air Pollution, Water Pollution) which use PPP or income elasticity
-- Represents **simplified value transfer** rather than adjusted transfer
-- Some practitioners advocate for income-adjusted VSL/DALY; WifOR chose uniform approach
-
-**Comparison to Income-Adjusted Approach**:
-```
-Current (Global):
-  All countries: USD 200,000/DALY
-
-Income-Adjusted Alternative:
-  USA (high income):     USD 400,000/DALY
-  Germany (high income): USD 350,000/DALY
-  India (lower income):  USD 50,000/DALY
-```
-
-#### Public Databases
-- **Eurostat**: https://ec.europa.eu/eurostat/web/health/health-safety-work
-- **GBD Study**: https://www.healthdata.org/gbd
-
-#### Ecosystem Comparison
-- **Methodology Alignment**: Based on established DALY approach and global health studies (GBD).
-- **Differences from**: Other OHS valuation may use pure VSL without DALYs, or different monetization coefficients.
-- **Convergence status**: High (DALY is a widely recognized metric)
-
-#### Value Commission Assessment
-- **Transparency**: High (GBD is public, DALY methodology is well-documented)
-- **Confidence criteria**: Met (rated "Well Established" in README)
-- **Value note**: Uses a single global DALY value for ethical consistency
+The script generates a detailed output file (`ohs_damage_costs_detailed.h5` and `.xlsx`) with the DALYs per incident, the VSLY used, and the final damage cost for each incident category and country, as well as a summary file.
 
 ---
 
