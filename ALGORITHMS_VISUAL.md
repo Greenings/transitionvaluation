@@ -456,3 +456,388 @@ APPLY INFLATION (same as Waste example above)
 **Last Updated**: 2026-01-02
 **Maintained by**: WifOR Development Team
 **Contact**: dimitrij.euler@greenings.org
+
+---
+
+# Indicator-Specific Flowcharts
+
+This section provides a visual representation of the public data flow for generating all 8 value factors.
+
+---
+
+## 1. Greenhouse Gas (GHG) Emissions
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+         │                           │
+    ┌────▼─────┐              ┌─────▼──────┐
+    │ DICE Model │              │ World Bank   │
+    │ (Nordhaus) │              │ Open Data    │
+    └────┬─────┘              └─────┬──────┘
+         │                           │
+    ┌────▼─────┐              ┌─────▼──────┐
+    │ Social Cost│              │ GDP Deflators│
+    │ of Carbon  │              │              │
+    │ (USD/tonne)│              │              │
+    └────┬─────┘              └─────┬──────┘
+         │                           │
+         └────────────┬──────────────┘
+                      │
+             ┌────────▼─────────┐
+             │   Generate GHG   │
+             │   Value Factors  │
+             └────────┬─────────┘
+                      │
+      ┌───────────────▼───────────────┐
+      │      PROCESSING STEPS         │
+      ├───────────────────────────────┤
+      │ 1. Convert SCC to USD/kg      │
+      │ 2. Apply inflation adjustment │
+      │    using World Bank deflators │
+      └───────────────┬───────────────┘
+                      │
+             ┌────────▼─────────┐
+             │   Final Output   │
+             └────────┬─────────┘
+                      │
+    ┌─────────────────▼─────────────────┐
+    │ GHG Value Factors (USD/kg)        │
+    │ (constant base-year USD)          │
+    └───────────────────────────────────┘
+```
+
+---
+
+## 2. Air Pollution
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ German     │       │ NEEDS EU   │                │ World Bank   │
+│ Federal Env.│      │ Project    │                │ Open Data    │
+│ Agency (UBA)│      │            │                │              │
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ Base Damage│       │ Foundational│                │ GDP per      │
+│ Costs      │       │ Data        │                │ Capita &     │
+│            │       │             │                │ Deflators    │
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+      └──────────────┬───────┴───────────┬───────────────┘
+                     │                   │
+             ┌───────▼──────────┐  ┌─────▼──────┐
+             │ Generate Air     │  │ Value      │
+             │ Pollution Value  │  │ Transfer   │
+             │ Factors          │  │ Mechanism  │
+             └───────┬──────────┘  └─────┬──────┘
+                     │                   │
+      ┌──────────────▼───────────────────▼───────────────┐
+      │                PROCESSING STEPS                  │
+      ├──────────────────────────────────────────────────┤
+      │ 1. Fetch base damage costs from UBA & NEEDS      │
+      │ 2. Apply Value Transfer Mechanism:               │
+      │    - Adjust for income using GDP per capita      │
+      │ 3. Sum up 4 damage categories (health, etc.)     │
+      │ 4. Apply inflation adjustment with GDP deflators │
+      └──────────────────────┬───────────────────────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │   Final Output   │
+                    └────────┬─────────┘
+                             │
+           ┌─────────────────▼─────────────────┐
+           │ Air Pollution Value Factors (USD/kg)│
+           │ (constant base-year USD)            │
+           └───────────────────────────────────┘
+```
+
+---
+
+## 3. Water Pollution
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+   │                │                │                  │
+┌──▼──┐      ┌────▼────┐      ┌────▼────┐        ┌───────▼────────┐
+│Steen│      │ USEtox  │      │ Ahlroth │        │ World Bank &   │
+│(2020)│     │ Model   │      │ (2009)  │        │ WULCA          │
+└──┬──┘      └────┬────┘      └────┬────┘        └───────┬────────┘
+   │                │                │                  │
+┌──▼──┐      ┌────▼────┐      ┌────▼────┐        ┌───────▼────────┐
+│Nutrient│   │Heavy Metal│    │Base WTP │        │ PPP & AWARE    │
+│Method.│    │ Methodology│   │ Values  │        │ Factors        │
+└──┬──┘      └────┬────┘      └────┬────┘        └───────┬────────┘
+   │                │                │                  │
+   └────────┬───────┴──────────┬─────┴───────────┬──────┘
+            │                  │                 │
+    ┌───────▼──────────┐  ┌────▼────┐     ┌─────▼──────┐
+    │ Generate Water   │  │ Value   │     │ Water      │
+    │ Pollution Value  │  │ Transfer│     │ Scarcity   │
+    │ Factors          │  │ Mechanism│    │ Adjustment │
+    └───────┬──────────┘  └────┬────┘     └─────┬──────┘
+            │                  │                 │
+    ┌───────▼──────────────────▼─────────────────▼────────┐
+    │                   PROCESSING STEPS                  │
+    ├─────────────────────────────────────────────────────┤
+    │ 1. Combine Steen (nutrients) & USEtox (metals)      │
+    │ 2. Adjust base WTP values using PPP from World Bank │
+    │ 3. Adjust for water scarcity using AWARE factors    │
+    │ 4. Apply inflation adjustment with GDP deflators    │
+    └─────────────────────┬───────────────────────────────┘
+                          │
+                 ┌────────▼─────────┐
+                 │   Final Output   │
+                 └────────┬─────────┘
+                          │
+        ┌─────────────────▼─────────────────┐
+        │ Water Pollution Value Factors(USD/kg) │
+        │ (constant base-year USD)            │
+        └───────────────────────────────────┘
+```
+
+---
+
+## 4. Water Consumption
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+      │                            │                           │
+┌─────▼──────┐             ┌─────▼──────┐                ┌─────▼──────┐
+│ Academic   │             │ WULCA      │                │ GBD Study &  │
+│ Research   │             │ Working    │                │ World Bank   │
+│(Ligthart,Debarre)│       │ Group      │                │              │
+└─────┬──────┘             └─────┬──────┘                └─────┬──────┘
+      │                            │                           │
+┌─────▼──────┐             ┌─────▼──────┐                ┌─────▼──────┐
+│ Shadow     │             │ AWARE      │                │ DALYs &      │
+│ Price      │             │ Factors    │                │ GDP Deflators│
+│ Methodology│             │            │                │              │
+└─────┬──────┘             └─────┬──────┘                └─────┬──────┘
+      │                            │                           │
+      └──────────────┬─────────────┴───────────┬───────────────┘
+                     │                         │
+             ┌───────▼──────────┐        ┌─────▼──────┐
+             │ Generate Water   │        │ Dual       │
+             │ Consumption Value│        │ Approach   │
+             │ Factors          │        │            │
+             └───────┬──────────┘        └─────┬──────┘
+                     │                         │
+      ┌──────────────▼─────────────────────────▼───────────────┐
+      │                   PROCESSING STEPS                     │
+      ├────────────────────────────────────────────────────────┤
+      │ 1. Economic Damages: Shadow price adjusted by AWARE    │
+      │ 2. Health Damages: DALYs from GBD study monetized      │
+      │ 3. Sum economic and health damages                     │
+      │ 4. Apply inflation adjustment with GDP deflators       │
+      └────────────────────────┬───────────────────────────────┘
+                               │
+                      ┌────────▼─────────┐
+                      │   Final Output   │
+                      └────────┬─────────┘
+                               │
+        ┌──────────────────────▼────────────────────────┐
+        │ Water Consumption Value Factors (USD/m³)      │
+        │ (constant base-year USD)                      │
+        └───────────────────────────────────────────────┘
+```
+
+---
+
+## 5. Land Use
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+         │                           │                     │
+    ┌────▼─────┐              ┌─────▼──────┐        ┌─────▼──────┐
+    │ EPS        │              │ LANCA Model  │        │ World Bank   │
+    │ System     │              │              │        │ Open Data    │
+    └────┬─────┘              └─────┬──────┘        └─────┬──────┘
+         │                           │                     │
+    ┌────▼─────┐              ┌─────▼──────┐        ┌─────▼──────┐
+    │ Ecosystem  │              │ Character-   │        │ GDP Deflators│
+    │ Service    │              │ ization      │        │              │
+    │ Loss Values│              │ Factors      │        │              │
+    └────┬─────┘              └─────┬──────┘        └─────┬──────┘
+         │                           │                     │
+         └────────────┬──────────────┴───────────┬─────────┘
+                      │                          │
+             ┌────────▼─────────┐          ┌─────▼──────┐
+             │ Generate Land    │          │ Local      │
+             │ Use Value Factors│          │ Adjustment │
+             └────────┬─────────┘          └─────┬──────┘
+                      │                          │
+      ┌───────────────▼──────────────────────────▼──────────────┐
+      │                    PROCESSING STEPS                     │
+      ├─────────────────────────────────────────────────────────┤
+      │ 1. Monetize ecosystem service loss using EPS system     │
+      │ 2. Adjust global EPS values with local LANCA factors    │
+      │ 3. Apply inflation adjustment with GDP deflators        │
+      └─────────────────────────┬───────────────────────────────┘
+                                │
+                       ┌────────▼─────────┐
+                       │   Final Output   │
+                       └────────┬─────────┘
+                                │
+               ┌────────────────▼─────────────────┐
+               │ Land Use Value Factors (USD/ha)   │
+               │ (constant base-year USD)          │
+               └───────────────────────────────────┘
+```
+
+---
+
+## 6. Waste Management
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ IPCC       │       │ EXIOBASE   │                │ World Bank   │
+│ Emission   │       │            │                │ Open Data    │
+│ Factor DB  │       │            │                │              │
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ Methane    │       │ Environmental│              │ GDP Deflators│
+│ Emission   │       │ Accounts    │                │              │
+│ Factors    │       │             │                │              │
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+      └──────────────┬───────┴───────────┬───────────────┘
+                     │                   │
+             ┌───────▼──────────┐  ┌─────▼──────┐
+             │ Generate Waste   │  │ Mixed      │
+             │ Management Value │  │ Method     │
+             │ Factors          │  │ Approach   │
+             └───────┬──────────┘  └─────┬──────┘
+                     │                   │
+      ┌──────────────▼───────────────────▼───────────────┐
+      │                PROCESSING STEPS                  │
+      ├──────────────────────────────────────────────────┤
+      │ 1. GHG from landfills (IPCC factors, valued w/ SCC)│
+      │ 2. Emissions from incineration (UBA methodology)   │
+      │ 3. Disamenity costs (PwC research - internal)    │
+      │ 4. Leachate contamination (HARAS model)          │
+      │ 5. Apply inflation adjustment with GDP deflators │
+      └──────────────────────┬───────────────────────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │   Final Output   │
+                    └────────┬─────────┘
+                             │
+           ┌─────────────────▼─────────────────┐
+           │ Waste Management Value Factors (USD/kg)│
+           │ (constant base-year USD)            │
+           └───────────────────────────────────┘
+```
+
+---
+
+## 7. Training
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ Psacharopoulos│    │ OECD       │                │ World Bank   │
+│ & Patrinos   │       │ Education  │                │ Open Data    │
+│ (2018)       │       │ Data       │                │              │
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ Returns to │       │ Sector-    │                │ PPP Data &   │
+│ Schooling  │       │ specific   │                │ GVA per worker│
+│ Research   │       │ wage premiums│              │              │
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+      └──────────────┬───────┴───────────┬───────────────┘
+                     │                   │
+             ┌───────▼──────────┐  ┌─────▼──────┐
+             │ Generate         │  │ Human      │
+             │ Training Value   │  │ Capital    │
+             │ Factors          │  │ Investment │
+             └───────┬──────────┘  └─────┬──────┘
+                     │                   │
+      ┌──────────────▼───────────────────▼───────────────┐
+      │                PROCESSING STEPS                  │
+      ├──────────────────────────────────────────────────┤
+      │ 1. Establish returns to education baseline       │
+      │ 2. Convert training hours to education equivalent│
+      │ 3. Project lifetime value of training            │
+      │ 4. Adjust for sector and PPP                     │
+      └──────────────────────┬───────────────────────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │   Final Output   │
+                    └────────┬─────────┘
+                             │
+           ┌─────────────────▼─────────────────┐
+           │ Training Value Factors (USD/hour)   │
+           │ (constant base-year USD)            │
+           └───────────────────────────────────┘
+```
+
+---
+
+## 8. Occupational Health & Safety (OHS)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PUBLIC DATA SOURCES                     │
+└─────────────────────────────────────────────────────────────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ Eurostat   │       │ GBD Study  │                │ WHO &        │
+│            │       │            │                │ World Bank   │
+│            │       │            │                │              │
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+┌─────▼──────┐       ┌─────▼──────┐                ┌─────▼──────┐
+│ Incident   │       │ Disability │                │ Life         │
+│ Rates      │       │ Weights    │                │ Expectancy & │
+│            │       │            │                │ GDP Deflators│
+└─────┬──────┘       └─────┬──────┘                └─────┬──────┘
+      │                      │                           │
+      └──────────────┬───────┴───────────┬───────────────┘
+                     │                   │
+             ┌───────▼──────────┐  ┌─────▼──────┐
+             │ Generate OHS     │  │ DALY-based │
+             │ Value Factors    │  │ Valuation  │
+             │                  │  │            │
+             └───────┬──────────┘  └─────┬──────┘
+                     │                   │
+      ┌──────────────▼───────────────────▼───────────────┐
+      │                PROCESSING STEPS                  │
+      ├──────────────────────────────────────────────────┤
+      │ 1. Calculate DALYs = YLL + YLD                   │
+      │    - YLL from WHO life expectancy data           │
+      │    - YLD from GBD disability weights & Eurostat  │
+      │ 2. Monetize DALYs using VSLY                     │
+      │ 3. Apply inflation adjustment with GDP deflators │
+      └──────────────────────┬───────────────────────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │   Final Output   │
+                    └────────┬─────────┘
+                             │
+           ┌─────────────────▼─────────────────┐
+           │ OHS Value Factors (USD per incident)│
+           │ (constant base-year USD)            │
+           └───────────────────────────────────┘
+```
