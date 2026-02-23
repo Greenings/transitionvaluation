@@ -36,6 +36,13 @@ This repository contains multiple components for impact valuation. Please refer 
   - Multi-year projections (2014-2030, 2050, 2100)
   - NACE sector granularity
 
+- **stockholm-value-factors/** - EPS 2015d.1 (Environmental Priority Strategies) characterisation factors as transitionvaluation-compatible coefficient matrices
+  - 12 LCIA impact categories: inorganic gases, particles, VOC, halogenated organics, emissions to water, pesticides, noise, radionuclides, land use, fossil resources, other elements, waste
+  - 892 substances covering all major emission flows to air, water, and soil
+  - 189 countries × 21 NACE sectors, EU HICP deflator-adjusted, years 2014–2100
+  - Source: Steen (2015), Swedish Life Cycle Center, Chalmers University of Technology
+  - Maintainer: Dr Dimitrij Euler, Greenings (dimitrij.euler@greenings.org)
+
 Each component has its own setup requirements and documentation. Navigate to the relevant subdirectory and consult its README.md for specific installation steps.
 
 ### Core Documentation in This Repository
@@ -284,7 +291,8 @@ For specific component questions, please refer to the documentation in the relev
 ```
 tvp1/
 ├── README.md                                           # This file
-├── value-factors/                                      # WifOR Value Factors implementation
+├── value-factors/                                      # WifOR Value Factors (submodule: wifor-impactanalysis/WifOR-Value-Factors)
+├── stockholm-value-factors/                            # EPS 2015d.1 LCIA factors (submodule: d1mitrij/Stockholm_ValueFactors)
 │
 ├── Core Documentation/
 │   ├── METHODOLOGY.md                                  # Calculation methodology

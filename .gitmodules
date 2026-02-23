@@ -1,3 +1,6 @@
 [submodule "value-factors"]
 	path = value-factors
 	url = https://github.com/wifor-impactanalysis/WifOR-Value-Factors.git
+[submodule "stockholm-value-factors"]
+	path = stockholm-value-factors
+	url = https://github.com/d1mitrij/Stockholm_ValueFactors.git
