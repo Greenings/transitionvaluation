@@ -4,3 +4,7 @@
 [submodule "stockholm-value-factors"]
 	path = stockholm-value-factors
 	url = https://github.com/d1mitrij/Stockholm_ValueFactors.git
+[submodule "uba-value-factors"]
+	path = uba-value-factors
+	url = https://github.com/d1mitrij/UBA_ValueFactors.git
+	branch = dima
