@@ -1,30 +1,22 @@
-# Value Transfer Description — UBA Value Factors
+# Value Transfer Description — WifOR, EPS (Steen) and UBA Value Factor Sets
 
-**Handbook on Environmental Value Factors, MC 4.0 (December 2025)**
+**Transitionvaluation Framework | Greenings | Updated 2026-03-05**
 
 ---
 
-## Overview
+## 1. Overview
 
-### What is value transfer?
+This document describes how the three value factor sets in the transitionvaluation
+framework can be integrated into the common WifOR coefficient matrix
+`C[year, indicator, country, sector]` covering 188 countries and 21 NACE sectors.
 
-Value transfer is the process of adapting an environmental monetary value estimated
-in one geographic or economic context (the **study site**) to another context
-(the **policy site**). For this dataset the UBA MC 4.0 handbook provides
-Germany-specific or global values in EUR_2025. The transitionvaluation framework
-requires country-differentiated coefficient matrices of shape
-`C[year, indicator, country, sector]` covering 188 countries and 19 or 21
-NACE sectors.
+### The three systems
 
-This document describes, for each of the 10 UBA table groups, how the
-Germany-specific base value can be transferred to the full country matrix
-using one of three recognised approaches:
-
-| Approach | Abbreviation | Description |
-|---|---|---|
-| **Unit value transfer** | UVT | Apply the German base value directly, adjusted only for price level (PPP or market rate) and income |
-| **Value function transfer** | VFT | Apply an empirical WTP-income elasticity function to rescale the German value by GDP per capita |
-| **Parameter transfer** | PT | Re-derive the value using country-specific physical parameters (population density, water scarcity, energy mix) with the same dose-response function |
+| System | Folder | Geographic anchor | Price base | Indicators | Rows/substances |
+|--------|--------|------------------|------------|------------|-----------------|
+| **WifOR** | `value-factors/` | Global (188 countries, already differentiated) | USD (mixed base years) | 8 | 8 categories |
+| **EPS 2015d.1** (Steen) | `stockholm-value-factors/` | Sweden (globally applied) | EUR 2015 (ELU ≈ EUR) | 12 | 892 substances |
+| **UBA MC 4.0** | `uba-value-factors/` | Germany (GHG: global via GIVE) | EUR 2025 | 10 | 546 rows |
 
 ### General coefficient formula (WifOR convention)
 
@@ -33,510 +25,830 @@ C[y, i, c, s] = Sign(i) × D[i, c] × I_USD[y]
 
 where:
   y           = year in {2014..2030, 2050, 2100}
-  i           = indicator (UBA table group key)
+  i           = indicator
   c           = country ISO3 code (188 countries)
-  s           = NACE A21 sector (uniform for most indicators; see exceptions below)
-  Sign(i)     = −1.0 for damage costs;  +1.0 for benefits
-  D[i, c]     = country-specific base damage/benefit value in USD (after value transfer)
+  s           = NACE A21 sector
+  Sign(i)     = −1.0 for damage costs; +1.0 for benefits (Training only)
+  D[i, c]     = country-specific base value in USD after value transfer
   I_USD[y]    = USA GDP deflator[y] / USA GDP deflator[base_year]
 ```
 
-**Currency conversion:** UBA values are in EUR_2025. Convert to USD using the
-average EUR/USD exchange rate for 2025 (approximately 1.07) before applying the
-value transfer adjustments. All output coefficients should be in USD for
-compatibility with the WifOR `C[y,i,c,s]` convention.
+### Value transfer approaches
+
+| Approach | Abbreviation | When to use |
+|---|---|---|
+| **Unit Value Transfer** | UVT | Globally uniform damage (climate, refrigerants); currency conversion only |
+| **Value Function Transfer** | VFT | WTP-income elasticity applied to rescale anchor-country value by GDP per capita |
+| **Parameter Transfer** | PT | Re-derive value using country-specific physical parameters (energy mix, population density, water scarcity) with the same dose-response function |
+
+### Geographic anchors and income scaling
+
+When applying VFT from a national anchor, the income-scaling reference is:
+
+```
+D[i, c] = D[i, anchor]
+            × (GDP_pc_PPP[c, base_year] / GDP_pc_PPP[anchor, base_year])^ε
+            × FX[anchor_currency → USD, base_year]
+
+Anchors:
+  UBA  → DEU (Germany)    GDP_pc_PPP 2025 ≈ 59,000 USD
+  EPS  → SWE (Sweden)     GDP_pc_PPP 2015 ≈ 46,000 USD
+  WifOR → global (no anchor; factors already country-differentiated)
+```
 
 ---
 
-## Indicator 01 — Greenhouse Gas Emissions (`ghg`)
+## 2. Indicator Map — Coverage Across the Three Systems
 
-**UBA source:** Table 1, GIVE model (Anthoff 2025), equity-weighted with German
-income as reference
-
-**UBA scope:** Year-specific social cost per tonne CO₂/CO₂-eq / CH₄ / N₂O in
-EUR_2025, two PRTP scenarios (0 % and 1 %)
-
-**Value transfer approach: Unit Value Transfer (UVT) — minimal adjustment needed**
-
-GHG climate damage is intrinsically global: one tonne of CO₂ emitted anywhere
-causes the same global warming. The GIVE model produces a global social cost;
-the UBA equity-weighting uses German income only as a reference scale for
-intranational equity — the underlying damage is not Germany-specific.
-
-### Transfer formula
-
-```
-D[ghg, c]  =  UBA_VF[gas, emission_year, PRTP]  ×  EUR_USD_2025
-
-Notes:
-  - D is uniform across all countries (same value for c = DEU, CHN, BRA, …)
-  - No PPP or income adjustment needed (global damage, not local WTP)
-  - Separate D per (gas, emission_year, PRTP_scenario)
-```
-
-### Coefficient matrix
-
-| Dimension | Treatment |
-|---|---|
-| Year | Apply USA GDP deflator from base year 2025 |
-| Country | Uniform across all 188 countries |
-| Sector | Uniform (GHG is emitted by all sectors equally per tonne) |
-| Sign | −1.0 for CO₂, CH₄, N₂O |
-
-### Implementation steps
-
-1. Convert EUR_2025 → USD_2025 (× 1.07).
-2. Expand: broadcast D[gas, emission_year, PRTP] across all 188 countries and
-   all NACE sectors.
-3. Apply USA GDP deflator row by row for years 2014–2030, 2050, 2100.
-4. Output: one coefficient matrix per PRTP scenario, or add PRTP as a second
-   `Variable` level in the MultiIndex alongside gas name.
+| Indicator | WifOR | EPS (Steen) | UBA MC 4.0 | Section |
+|-----------|:-----:|:-----------:|:----------:|---------|
+| **SAME — all three systems** | | | | |
+| Greenhouse gases (CO₂, CH₄, N₂O) | ✓ | ✓ | ✓ | 3.1 |
+| Air pollutants (PM, NOₓ, SO₂, NH₃, NMVOC) | ✓ | ✓ | ✓ | 3.2 |
+| Nitrogen & phosphorus to water | ✓ | ✓ | ✓ | 3.3 |
+| **SIMILAR — two of three systems** | | | | |
+| Land use / habitat conversion | ✓ | ✓ | — | 4.1 |
+| Noise | — | ✓ | ✓ | 4.2 |
+| Waste | ✓ | ✓ | — | 4.3 |
+| Heavy metals & toxics to air/water | ✓ | ✓ | — | 4.4 |
+| Halogenated compounds / refrigerants | — | ✓ (004) | ✓ (05) | 4.5 |
+| **DIFFERENT — unique to one system** | | | | |
+| Water consumption (blue water) | ✓ | — | — | 5.1 |
+| Training / human capital | ✓ | — | — | 5.2 |
+| Occupational health & safety (OHS) | ✓ | — | — | 5.3 |
+| Fossil resources depletion | — | ✓ (010) | — | 5.4 |
+| VOCs — detailed speciation (144 substances) | — | ✓ (003) | — | 5.5 |
+| Radionuclides | — | ✓ (008) | — | 5.6 |
+| Pesticides | — | ✓ (006) | — | 5.7 |
+| Critical minerals & other elements | — | ✓ (011) | — | 5.8 |
+| Electricity (life-cycle per kWh by source) | — | — | ✓ (03) | 5.9 |
+| Heat (life-cycle per kWh by source) | — | — | ✓ (04) | 5.10 |
+| Transport (per vehicle-km and Pkm/tkm) | — | — | ✓ (06/07) | 5.11 |
+| Agriculture (per kg product / nutrient surplus) | — | — | ✓ (10) | 5.12 |
 
 ---
 
-## Indicator 02 — Air Pollutant Emissions (`air_pollutants`)
+## 3. Same Indicators — Covered by All Three Systems
 
-**UBA source:** Tables 2–4, EcoSenseWeb v1.3, German population and
-receptor data; Chen and Hoek (2020) dose-response functions
+These indicators have direct counterparts in WifOR, EPS and UBA. They can be
+compared and, where methodologies align, cross-validated or merged.
 
-**UBA scope:** Health + crop + material damage per tonne emitted in Germany,
-differentiated by source type and surroundings
+---
 
-**Value transfer approach: Value Function Transfer (VFT) + Parameter Transfer (PT)**
+### 3.1 Greenhouse Gas Emissions — CO₂, CH₄, N₂O
 
-Air pollutant health damage depends on (a) the monetary value of a life-year or
-DALY (income-elastic) and (b) the population exposed per unit of emission
-(physical, country-specific). Both require explicit adjustment.
+**Coverage**
 
-### Transfer formula
+| System | Indicator / Script | Unit | Method | Price base |
+|--------|--------------------|------|--------|------------|
+| WifOR | `020_GHG` | USD/kg CO₂e | DICE/RICE (Nordhaus/Barrage 2024); global SCC | USD (mixed) |
+| EPS | `001_inorganic_gases` (CO₂, CH₄, N₂O) | ELU/kg | Climate change pathway → YOLL + crop + wood + fish + coastal; global | EUR 2015 |
+| UBA | `01_ghg` (Table 1) | EUR 2025/t | GIVE model (Anthoff 2025); equity-weighted, German income reference; 0 % and 1 % PRTP | EUR 2025 |
+
+**Key values at 2025 emission year**
+
+| Gas | WifOR | EPS | UBA (0 % PRTP) | UBA (1 % PRTP) |
+|-----|-------|-----|----------------|----------------|
+| CO₂ | varies by year/scenario | ~0.05–0.10 ELU/kg | 990 EUR/t | 345 EUR/t |
+| CH₄ | GWP100 × CO₂ SCC | pathway-derived | 9,220 EUR/t | 5,800 EUR/t |
+| N₂O | GWP100 × CO₂ SCC | pathway-derived | 282,300 EUR/t | 118,700 EUR/t |
+
+**Methodological differences**
+
+- **WifOR** uses the DICE/RICE integrated assessment model (Nordhaus 2024
+  update), producing a single global SCC trajectory. CH₄ and N₂O are expressed
+  as CO₂-equivalent via AR6 GWP100.
+- **EPS** sums pathway damages across five safeguard subjects using Swedish-
+  derived monetary values (YOLL = 50,000 ELU/person-year). The result is
+  globally applied but Swedish-income-anchored.
+- **UBA** uses the GIVE model (successor to FUND), which models CH₄ and N₂O
+  directly (not GWP100 proxies), with equity weighting using German per-capita
+  income as reference. Two PRTP scenarios are provided.
+
+**Value transfer**
+
+GHG damage is intrinsically global (one tonne emitted anywhere causes the same
+radiative forcing). No country-income adjustment is warranted for the climate
+damage component. Only currency conversion and temporal deflation are needed.
 
 ```
-D[AP_substance, c]
-  =  UBA_VF[substance, Table2_health_component]
-     × (GDP_pc[c] / GDP_pc[DEU])^ε_health          ← income elasticity for health WTP
-     × (POP_density[c] / POP_density[DEU])^α_pop   ← population exposure scaling
-     × EUR_USD_2025
+D[GHG, gas, c]  =  VF[gas, source_system]  ×  FX → USD  (uniform across all c)
+
+WifOR:  already in USD; apply I_USD[y] directly
+EPS:    VF[ELU/kg] × EU_HICP_deflator[y→2015] × EUR_USD[2015]
+UBA:    VF[EUR_2025/t] / 1000 × EUR_USD[2025]
+        (then apply I_USD[y] from base 2025)
+```
+
+**Cross-validation:** UBA 0 % PRTP CO₂ value (990 EUR/t ≈ 1,059 USD/t in 2025)
+is higher than typical DICE outputs (~200–400 USD/t at ~3 % discount rate)
+because GIVE uses 0 % pure time preference and equity weighting. This is a
+known and documented difference, not an error.
+
+---
+
+### 3.2 Air Pollutant Emissions — PM₂.₅, PM₁₀, NOₓ, SO₂, NH₃, NMVOC
+
+**Coverage**
+
+| System | Indicator / Script | Substances | Unit | Method |
+|--------|--------------------|-----------|------|--------|
+| WifOR | `008_AirPollution` | PM2.5, PM10, NOx, SOx, NMVOC, NH₃ | USD/t pollutant | UBA methodology + regional population-density adjustment; 188 countries |
+| EPS | `001_inorganic_gases` + `002_particles` | PM>10, PM10, PM2.5, ultrafine PM; NOₓ, SO₂, HF, HCl, NH₃, O₃, and more | ELU/kg | Pathway model: YOLL (health) + crop + biodiversity + materials; Swedish anchor |
+| UBA | `02_air_pollutants` (Tables 2–4) | PM2.5, PMcoarse, PM10_abrasion, NOₓ, SO₂, NMVOC, NH₃ | EUR 2025/t | EcoSenseWeb v1.3; German population density; three context tiers |
+
+**Key values (health component, unknown source context)**
+
+| Substance | WifOR (USD/t) | EPS (EUR 2015/t) | UBA (EUR 2025/t) |
+|-----------|---------------|-----------------|-----------------|
+| PM₂.₅ | country-specific | pathway-derived | 128,200 (health) |
+| NOₓ | country-specific | pathway-derived | 37,740 (total) |
+| SO₂ | country-specific | pathway-derived | 35,325 (total) |
+| NH₃ | country-specific | pathway-derived | 30,275 (total) |
+
+**Methodological differences**
+
+- **WifOR** already applies population-density and income adjustment relative to
+  Germany (it uses UBA as its methodological basis). Its country-specific factors
+  are the output of a VFT + PT already applied.
+- **EPS** monetizes through the YOLL pathway (50,000 ELU/person-year, Swedish
+  WTP). Includes crop production, biodiversity (NEX), and building materials in
+  addition to health. No country differentiation in published EPS index values.
+- **UBA** provides three tiers: Table 2 (unknown source — recommended default),
+  Table 3 (stationary combustion, differentiated by sector/height/surroundings),
+  Table 4 (road traffic, by surroundings type). Germany-specific receptor data.
+
+**Value transfer (EPS and UBA to other countries)**
+
+Air pollutant health damage depends on (a) the monetary value of life-years
+(income-elastic) and (b) the population exposed per tonne emitted (physical,
+country-specific).
+
+```
+D[AP, substance, c]
+  =  VF[substance, anchor]                        ← EPS anchor: SWE; UBA anchor: DEU
+     × (GDP_pc_PPP[c] / GDP_pc_PPP[anchor])^ε_h   ← income elasticity (health WTP)
+     × (POP_density[c] / POP_density[anchor])^α   ← exposure scaling
+     × FX → USD
 
 where:
-  ε_health  ≈ 0.8–1.0  (income elasticity of WTP for health, standard range in literature)
-  α_pop     ≈ 1.0       (linear population exposure for uniformly mixed pollutants)
+  ε_h  ≈ 0.8–1.0   (health WTP income elasticity, literature consensus)
+  α    ≈ 1.0        (linear for uniformly mixed regional pollutants)
+  α    ≈ 0.5–0.7    (sub-linear for local pollutants: PM₂.₅ road traffic)
 
-  Note: crop and material components are not income-elastic and do not require
-  income adjustment (use UVT with EUR/USD conversion only for those components).
+Non-health components (crop damage, material damage):
+  Not income-elastic; use UVT with currency conversion only.
 ```
 
-### Special case — Road traffic (Table 4, urban surroundings)
-
-Urban PM₂.₅ values (e.g. 511,600 EUR/t for urban exposure) are particularly
-high because they reflect dense German urban population. For countries with
-lower urban population density, scale by the country's average urban population
-density relative to Germany's.
-
-### Coefficient matrix
-
-| Dimension | Treatment |
-|---|---|
-| Country | Differentiated via income elasticity + population density |
-| Sector | Possible differentiation: transport emissions use Table 4 values; stationary combustion uses Table 3; unknown source uses Table 2 |
-| Sign | −1.0 for all components |
+**WifOR note:** WifOR air pollution coefficients are already the result of
+applying this VFT + PT to the UBA base values. For WifOR integration, use its
+published D[i, c] values directly and apply I_USD[y].
 
 ---
 
-## Indicator 03 — Electric Power Generation (`electricity`)
+### 3.3 Nitrogen and Phosphorus to Water
 
-**UBA source:** Table 5, full life-cycle value factors per kWh by energy source
+**Coverage**
 
-**UBA scope:** Germany-specific; reflects the German electricity supply chain,
-grid losses, and German population receptor data
+| System | Indicator / Script | Substances | Unit |
+|--------|--------------------|-----------|------|
+| WifOR | `013_WaterPol` | N (NH₄, NO₃, TN), P (PO₄, TP) | USD/kg |
+| EPS | `005_emissions_to_water` | N compounds, P compounds | ELU/kg |
+| UBA | `09_nitrogen_phosphorus` (Tables 22–24) | N air (NOₓ, NH₃, N₂O), N water, P water | EUR 2025/kg N or kg P |
 
-**Value transfer approach: Parameter Transfer (PT) — country energy mix required**
+**Methodological differences**
 
-The electricity value factor for a country depends on its energy mix.
-Germany's mix cannot be applied globally. Instead, compute a weighted average
-value factor per kWh for each country using country-specific generation shares.
+- **WifOR** models health and ecosystem damage from N and P using the USEtox
+  and Steen (2020) approach; 188 country-specific factors.
+- **EPS** models eutrophication via oxygen deficiency pathway (BOD, N, P to
+  freshwater and marine). Swedish-anchored monetary values for fish, biodiversity,
+  and drinking water.
+- **UBA** applies a limiting-substance assumption: only the limiting nutrient (N
+  or P) causes eutrophication damage. This yields conservative lower bounds.
+  Air N emissions (NOₓ, NH₃) are valued via health pathways (as per indicator 02).
 
-### Transfer formula
+**Value transfer (EPS and UBA)**
+
+Eutrophication damage scales with water scarcity and ecosystem sensitivity,
+which vary substantially by country.
+
+```
+D[N_water, c]  =  VF[N, anchor]
+                   × AWARE[c]                       ← water scarcity (0.1–100, WULCA AWARE v2)
+                   × (GDP_pc_PPP[c] / GDP_pc_PPP[anchor])^ε_eco
+                   × FX → USD
+
+D[N_air, c]    →  transfer as air pollutant (health pathway, indicator 3.2)
+
+where:
+  ε_eco  ≈ 0.4–0.6  (ecosystem WTP income elasticity; lower than health)
+  anchor = SWE for EPS; DEU for UBA
+```
+
+**Limiting-substance caveat (UBA):** In countries where both N and P are
+co-limiting, the UBA value is an underestimate. Supplement with EPS or
+WifOR values where possible.
+
+---
+
+## 4. Similar Indicators — Covered by Two of Three Systems
+
+These indicators have meaningful overlap between two systems. The third system
+does not cover them, creating a gap to be filled either by transfer from one
+of the covering systems or by noting the limitation.
+
+---
+
+### 4.1 Land Use / Habitat Conversion
+
+**Covered by:** WifOR ✓ | EPS ✓ | UBA —
+
+| System | Indicator | Scope | Unit |
+|--------|-----------|-------|------|
+| WifOR | `010_LandUse` | Ecosystem service losses; LANCA factors; 188 countries | USD/ha |
+| EPS | `009_land_use` (23 land types) | Five pathways: climate, crop, wood, water regulation, NEX; Swedish anchor | ELU/m²·yr |
+
+**UBA gap:** UBA MC 4.0 explicitly excludes land use (Chapters 8–12 are not
+parsed; Chapter 8 building materials are illustrative only, no standalone VF
+recommended). Agriculture (indicator 10) partially captures land via animal
+product GHG and N pathways but does not include a dedicated land use VF.
+
+**Integration approach:**
+
+Use WifOR `010_LandUse` as the primary source for the 188-country coefficient
+matrix. EPS `009` can serve as a cross-validation anchor.
+
+```
+EPS → WifOR cross-check:
+  D[land, WifOR, c] should approximate
+    EPS_land_VF[type]
+    × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε_eco
+    × land_type_mapping[EPS → WifOR categories]
+```
+
+For UBA indicators that involve land (agriculture, transport infrastructure),
+supplement with WifOR land use values applied to the physical land use
+intensity (ha per tonne product or km per vehicle type).
+
+---
+
+### 4.2 Noise
+
+**Covered by:** WifOR — | EPS ✓ | UBA ✓
+
+| System | Indicator | Scope | Unit |
+|--------|-----------|-------|------|
+| EPS | `007_noise` | Road traffic noise; sleep disturbance → YOLL pathway; Swedish anchor | ELU/W (relative power) |
+| UBA | `08_noise` (Tables 19–20) | Road, rail, air traffic; annoyance + cognitive impairment in children; by dB(A) class; German anchor | EUR 2025/person/year |
+
+**WifOR gap:** WifOR does not include a noise indicator. Noise externalities
+from transport are absent from the WifOR coefficient matrix.
+
+**Unit reconciliation — EPS to UBA:**
+
+EPS uses relative acoustic power (W = 10^(dB/10)) as the emission unit.
+UBA uses person-year of exposure at a specific dB(A) class.
+
+```
+Conversion:
+  EPS:  ELU per W of relative power
+  UBA:  EUR/person/year at dB(A) class [45–49, 50–54, …, ≥75]
+
+To bridge: apply WHO exposure-response function (Guski et al. 2017) to
+translate relative power into % highly annoyed per exposed person, then
+multiply by UBA per-person-year value:
+
+  D[noise_EPS, dB, c]  ≈  %HA(dB) × pop_exposed × D[noise_UBA, dB, c]
+                            × (GDP_pc_PPP[c] / GDP_pc_PPP[DEU])^ε_noise
+
+where ε_noise ≈ 0.8 (Navrud 2002; Dekkers & van der Straaten 2009)
+and anchor = DEU for UBA; SWE for EPS.
+```
+
+**Value transfer (both systems to 188 countries):**
+
+```
+D[noise, dB_class, mode, c]
+  =  VF[noise, dB_class, mode, anchor]
+     × (GDP_pc_PPP[c] / GDP_pc_PPP[anchor])^0.8
+     × FX → USD
+```
+
+**Recommendation:** Use UBA noise values as the primary source (more granular
+dB-class structure; covers road, rail, and air; updated 2025 German income base).
+Transfer via VFT with Sweden as the EPS cross-validation point.
+
+---
+
+### 4.3 Waste
+
+**Covered by:** WifOR ✓ | EPS ✓ | UBA —
+
+| System | Indicator | Scope | Unit |
+|--------|-----------|-------|------|
+| WifOR | `007_Waste` | Hazardous and non-hazardous waste; incineration, landfill, recovery pathways; 188 countries | USD/kg |
+| EPS | `012_waste` | Plastic litter to ground and water; Swedish anchor | ELU/unit |
+
+**UBA gap:** UBA MC 4.0 does not include a waste indicator. Building materials
+(Tables 28–29) are explicitly excluded as illustrative only.
+
+**Integration approach:**
+
+Use WifOR `007_Waste` for the 188-country coefficient matrix. EPS `012`
+covers only litter (a narrower category) and is best used to supplement the
+plastic waste sub-pathway.
+
+**EPS → country transfer:**
+
+```
+D[waste_EPS, c]  =  EPS_VF[litter_type]
+                     × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε_eco
+                     × EUR_USD[2015] × HICP[2015 → target_year]
+```
+
+---
+
+### 4.4 Heavy Metals and Toxic Substances to Air and Water
+
+**Covered by:** WifOR ✓ | EPS ✓ | UBA —
+
+| System | Indicator | Substances | Unit |
+|--------|-----------|-----------|------|
+| WifOR | `013_WaterPol` | As, Cd, Hg, Cr, Pb, Ni, Cu, Zn, Sb (water) | USD/kg metal |
+| EPS | `002_particles` (metals in PM) + `005_emissions_to_water` | As, Cd, Cr, Cu, Pb, Zn, PAH (air + water) | ELU/kg |
+
+**UBA gap:** UBA covers only criteria air pollutants and N/P. No heavy metal
+or organic toxicant value factors are provided.
+
+**Integration approach:**
+
+Use WifOR water pollution coefficients as primary. EPS provides the
+substance-level characterization factors for cross-validation and for
+substances not in WifOR.
+
+```
+D[metal, c] from EPS:
+  D[metal, c]  =  EPS_VF[metal]
+                   × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε_h    ← health component
+                   × (POP_density[c] / POP_density[SWE])       ← exposure
+                   × EUR_USD[2015] × HICP[2015 → target_year]
+```
+
+---
+
+### 4.5 Halogenated Compounds and Refrigerants
+
+**Covered by:** WifOR — | EPS ✓ (004) | UBA ✓ (05)
+
+| System | Indicator | Scope | Unit | Method |
+|--------|-----------|-------|------|--------|
+| EPS | `004_halogenated_organics` | CFCs, HCFCs, HFCs, PFCs, halons, chlorinated solvents (283 substances) | ELU/kg | Climate change + ozone depletion + human toxicity pathways |
+| UBA | `05_refrigerants` (Table 7) | R-32, R-410A, R-134a, R-507A, R-717 (NH₃), R-290, and others (8 refrigerants) | EUR 2025/kg refrigerant | GWP100 × CO₂ social cost; climate only |
+
+**WifOR gap:** WifOR does not have a dedicated halogenated compound or
+refrigerant indicator. These are absent from the WifOR coefficient matrix.
+
+**Methodological differences:**
+
+- **EPS** covers three damage pathways (climate, ozone depletion, toxicity),
+  producing a comprehensive ELU/kg per substance.
+- **UBA** covers only the climate pathway (GWP100 × CO₂ VF), making it a
+  conservative lower bound for substances with significant ozone depletion or
+  toxicity impacts (e.g. CFCs).
+
+**Value transfer:**
+
+UBA refrigerant values are globally uniform (derived from global CO₂ VF):
+
+```
+D[refrigerant r, c]  =  GWP100[r] × UBA_VF[CO₂, 2025, PRTP] × EUR_USD[2025]
+                         (uniform across all c — no country adjustment)
+```
+
+EPS halogenated values include non-climate pathways and are Sweden-anchored
+for the monetary health component:
+
+```
+D[substance, c] from EPS:
+  D[substance, c]  =  EPS_VF[substance]
+                        × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε     ← for health/toxicity share
+                        × EUR_USD[2015] × HICP[2015 → target_year]
+  (climate share: uniform; ozone depletion: uniform; toxicity: income-elastic)
+```
+
+**Recommendation:** For refrigerants covered by UBA, use the UBA value as the
+primary climate-damage VF. For ozone-depleting substances (CFCs, HCFCs) not
+in UBA, use the EPS value transferred via VFT from the Swedish anchor.
+
+---
+
+## 5. Different Indicators — Unique to One System
+
+These indicators are covered by only one of the three systems. No cross-
+validation is possible; value transfer from the single source must rely on
+the standard VFT / PT / UVT framework.
+
+---
+
+### 5.1 Water Consumption (Blue Water) — WifOR only
+
+**WifOR script:** `009_WaterConsumption` | Unit: USD/m³ | Method: economic
+damage + DALYs; Ligthart & van Harmelen + Debarre et al.; 188 countries.
+
+WifOR already provides country-specific coefficients. Apply I_USD[y] directly.
+
+**Coverage gap in EPS and UBA:** Neither system includes blue water depletion.
+
+---
+
+### 5.2 Training / Human Capital — WifOR only
+
+**WifOR script:** `014_Training` | Unit: USD/hour of training | Method: return
+to education (Psacharopoulos & Patrinos 2018); positive benefit; 188 countries.
+
+Sign convention: +1.0 (benefit). WifOR is the sole source; no transfer needed.
+
+**Coverage gap in EPS and UBA:** Training benefits are absent from both systems.
+EPS covers only environmental damage categories; UBA covers only environmental
+externality costs.
+
+---
+
+### 5.3 Occupational Health & Safety (OHS) — WifOR only
+
+**WifOR script:** `015_OHS` | Unit: USD/fatal or non-fatal incident | Method:
+DALYs (Global Burden of Disease); VSL approach; 188 countries.
+
+Sign: −1.0. Country-specific VSL derived from income elasticity (ε ≈ 1.0)
+relative to a global reference VSL.
+
+**Coverage gap in EPS and UBA:** OHS is absent from both. EPS human health
+pathway captures population-level health effects of environmental exposures,
+not workplace-specific incidents. UBA does not cover occupational risks.
+
+---
+
+### 5.4 Fossil Resource Depletion — EPS only
+
+**EPS script:** `010_fossil_resources` | Substances: fossil oil, fossil coal,
+lignite, natural gas | Unit: ELU/kg | Method: resource depletion → future
+extraction cost increase + energy substitution cost; Swedish anchor.
+
+**Value transfer to 188 countries:**
+
+```
+D[fossil_resource, c]  =  EPS_VF[resource]
+                            × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε_res
+                            × EUR_USD[2015] × HICP[2015 → y]
+
+ε_res  ≈ 0.5–0.8  (resource depletion WTP; lower than health; literature limited)
+```
+
+**Note:** UBA's electricity and heat value factors (indicators 5.9–5.10) implicitly
+include upstream fossil resource extraction costs as part of the life-cycle damage.
+These should not be double-counted with the EPS fossil resource indicator.
+
+---
+
+### 5.5 Volatile Organic Compounds — Detailed Speciation (EPS only)
+
+**EPS script:** `003_VOCs` | Substances: 144 (alkanes, aromatics, alcohols,
+aldehydes, terpenes, chlorinated solvents) | Unit: ELU/kg.
+
+WifOR includes NMVOC as an aggregated category in air pollution. UBA includes
+NMVOC in Tables 2–4 as an aggregate. EPS provides 144 individual compounds.
+
+**Value transfer:**
+
+```
+D[VOC_compound, c]  =  EPS_VF[compound]
+                         × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε_h
+                         × (POP_density[c] / POP_density[SWE])
+                         × EUR_USD[2015] × HICP[2015 → y]
+```
+
+For integration, either (a) map EPS compounds to the NMVOC aggregate in WifOR
+or UBA using mass-weighted averaging, or (b) maintain at substance level for
+LCA-linked applications.
+
+---
+
+### 5.6 Radionuclides — EPS only
+
+**EPS script:** `008_radionuclides` | Substances: C-14, H-3, I-129, Kr-85,
+Pb-210, Po-210, Ra-226, Rn-222, Th-230, U-234, U-238 | Unit: ELU/TBq.
+
+Radionuclide damage is primarily health-based (YOLL via radiation dose). The
+EPS pathway uses UNSCEAR dose-response functions applied globally.
+
+**Value transfer:**
+
+```
+D[radionuclide, c]  =  EPS_VF[nuclide]
+                         × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε_h
+                         × EUR_USD[2015] × HICP[2015 → y]
+(no population-density scaling: radiation disperses globally via atmospheric/oceanic pathways)
+```
+
+**Relevance:** Nuclear electricity generation and uranium mining. Cross-reference
+with UBA electricity (indicator 5.9) for nuclear power plants (UBA Table 5
+includes nuclear as an energy source).
+
+---
+
+### 5.7 Pesticides — EPS only
+
+**EPS script:** `006_pesticides` | Substances: 302 (herbicides, insecticides,
+fungicides, growth regulators) | Unit: ELU/kg active substance.
+
+WifOR does not include pesticide costs. UBA does not include them either (agriculture
+value factors in UBA focus on GHG, N, and P pathways, not pesticide toxicity).
+
+**Value transfer:**
+
+```
+D[pesticide, c]  =  EPS_VF[pesticide]
+                     × (GDP_pc_PPP[c] / GDP_pc_PPP[SWE])^ε_eco    ← ecosystem component dominant
+                     × EUR_USD[2015] × HICP[2015 → y]
+
+ε_eco  ≈ 0.4–0.6  (ecosystem WTP income elasticity)
+```
+
+For agricultural applications, the pesticide value factor should be added to
+the UBA agriculture value factors to give a more complete damage picture.
+
+---
+
+### 5.8 Critical Minerals and Other Elements — EPS only
+
+**EPS script:** `011_other_elements` | Substances: 77 (Ag to Zr: silver, rare
+earth elements, platinum group, Li, Co, In, Ga, and other critical minerals) |
+Unit: ELU/kg.
+
+Method: future extraction cost increase + substitution cost; globally anchored
+(no population-density dependence).
+
+**Value transfer:**
+
+```
+D[element, c]  =  EPS_VF[element]
+                   × EUR_USD[2015] × HICP[2015 → y]
+(globally uniform; resource scarcity is not country-specific in EPS 2015d.1)
+```
+
+---
+
+### 5.9 Electricity — Life-cycle VF per kWh by Source (UBA only)
+
+**UBA script:** `03_electricity` (Table 5) | Unit: EUR-cent 2025/kWh_el |
+Sources: German mix, Lignite, Hard coal, Natural gas, Nuclear, Wind, Solar PV,
+Hydro, Biomass | Components: air pollutants + GHG (× 2 PRTP) per source.
+
+**Germany-specific:** reflects the German supply chain, grid losses, and German
+population receptor data.
+
+**Value transfer to 188 countries:**
+
+Apply a country energy-mix weighted average:
 
 ```
 D[electricity, c]
-  =  Σ_{source s} share[s, c]
-       × D_AP[source, c]           ← air pollutant component (value-transferred per indicator 02)
-       × (1 + GHG_share[source])   ← GHG component from indicator 01
+  =  Σ_source  share[source, c]
+        × [VF_GHG[source] × EUR_USD[2025]                          ← global (UVT)
+         + VF_AP[source] × (GDP_pc_PPP[c] / GDP_pc_PPP[DEU])^ε_h  ← health-elastic (VFT)
+                         × (POP_density[c] / POP_density[DEU])]    ← exposure (PT)
 
-where:
-  share[s, c]  = country c's electricity generation share for source s
-                 (IEA World Energy Balances or Ember electricity data)
-  D_AP[source, c]  = air pollutant damage for source s in country c
-                     (transferred as per indicator 02)
-  GHG_share    = GHG intensity per kWh by source (from IPCC AR6 lifecycle GHG)
-
-Unit:  EUR-cent_2025/kWh_el  →  USD/kWh after conversion
+where share[source, c] = IEA World Energy Balances / Ember electricity generation shares
 ```
 
-### Simplified proxy (if country energy-mix data unavailable)
-
-Use the IEA regional average emission intensity (kg CO₂e/kWh) to scale the
-German value proportionally:
+Simplified proxy (if mix data unavailable):
 
 ```
 D[electricity, c]  ≈  D[German_mix, DEU]
                         × (emission_intensity[c] / emission_intensity[DEU])
-                        × EUR_USD_2025
-```
-
-### Coefficient matrix
-
-| Dimension | Treatment |
-|---|---|
-| Country | Differentiated by energy mix and air pollutant transfer |
-| Sector | Uniform (electricity as an input commodity) |
-| Sign | −1.0 |
-
----
-
-## Indicator 04 — Heat Generation (`heat`)
-
-**UBA source:** Table 6, value factors per kWh final energy by heat source
-
-**Value transfer approach: Parameter Transfer (PT) — same logic as electricity**
-
-Heat generation mix and building stock vary by country. Apply the same
-country-energy-mix approach as for electricity, using national statistics on
-residential and district heating fuel use (Eurostat, IEA).
-
-### Transfer formula
-
-```
-D[heat, c]
-  =  Σ_{source s} share_heat[s, c]
-       × VF[source, c]    ← air pollutant component value-transferred
-       × EUR_USD_2025
-```
-
-For countries where district heating predominates (Nordic countries, Russia),
-the district heating row from Table 6 may be used directly with income-elasticity
-adjustment for the health component.
-
----
-
-## Indicator 05 — Refrigerants (`refrigerants`)
-
-**UBA source:** Table 7, GWP100-based value factors per kg refrigerant lost
-
-**Value transfer approach: Unit Value Transfer (UVT) — derives from global GHG value**
-
-Refrigerant value factors are derived mechanically from GWP100 values and the
-CO₂ social cost (indicator 01). Because CO₂ damage is global (see indicator 01),
-the refrigerant value factors are also globally uniform.
-
-### Transfer formula
-
-```
-D[refrigerant r, c]
-  =  GWP100[r]  ×  D[CO2, emission_year=2025, PRTP]  ×  EUR_USD_2025
-
-  =  GWP100[r]  ×  UBA_VF[CO2, 2025, PRTP]  ×  EUR_USD_2025
-
-  Uniform across all countries (same as GHG indicator).
+                        × EUR_USD[2025]
 ```
 
 ---
 
-## Indicator 06 — Passenger and Freight Transport — per vehicle km (`transport_vehkm`)
+### 5.10 Heat Generation — Life-cycle VF per kWh by Source (UBA only)
 
-**UBA source:** Tables 9–16, five-component value factors per vehicle-km by
-route type (all routes / motorway / rural / urban), vehicle type, and PRTP
+**UBA script:** `04_heat` (Table 6) | Unit: EUR-cent 2025/kWh_final_energy |
+Sources: Natural gas, Heating oil, Hard coal, Lignite, Biomass, Solar thermal,
+Heat pumps.
 
-**UBA scope:** Germany-specific (German road network, vehicle fleet standards,
-German population along routes)
+Apply the same country-energy-mix approach as electricity (indicator 5.9),
+using national statistics on residential and district heating fuel use
+(Eurostat Energy Balances, IEA).
 
-**Value transfer approach: Component-wise VFT + PT**
+For countries where district heating from CHP predominates (Nordic countries,
+Russia, Eastern Europe), the district heating row from Table 6 is preferred
+as a transfer base with income-elasticity adjustment for the health component.
 
-The five cost components require different transfer methods:
+---
 
-| Component | Transfer method |
-|---|---|
-| `ghg` | Global (as indicator 01) — no country adjustment |
-| `air_pollutants_exhaust` | VFT: income elasticity + population density (as indicator 02) |
-| `air_pollutants_abrasion` | VFT: same as exhaust but using road-traffic Table 4 values |
-| `infra_and_vehicles` | UVT + PPP: infrastructure and vehicle costs scale with local price levels |
-| `energy_supply` | PT: depends on country electricity/fuel mix and upstream emissions |
+### 5.11 Transport — per Vehicle-km and per Pkm/tkm (UBA only)
 
-### Transfer formula (per vehicle-km)
+**UBA scripts:** `06_transport_vehkm` (Tables 9–16), `07_transport_pkm_tkm`
+(Tables 17–18) | Vehicles: Cars, Vans, Heavy-duty trucks, Buses, Rail, Air,
+Ship (by fuel type and route) | Components: GHG, AP exhaust, AP abrasion,
+infrastructure, energy supply.
+
+**Value transfer — component-wise:**
+
+| Component | Method | Country adjustment |
+|-----------|--------|--------------------|
+| `ghg` | UVT | None (global) |
+| `air_pollutants_exhaust` | VFT + PT | Income elasticity + population density along routes |
+| `air_pollutants_abrasion` | VFT + PT | As above (urban/rural road network density) |
+| `infra_and_vehicles` | UVT + PPP | Scale by local price level (construction costs) |
+| `energy_supply` | PT | Country fuel/electricity mix (as indicator 5.9/5.10) |
 
 ```
 D[vehkm, vehicle, route, c]
-  =  VF_ghg[vehicle, route]  ×  EUR_USD_2025                        ← global
-   + VF_ap[vehicle, route]   × (GDP_pc[c]/GDP_pc[DEU])^ε            ← health-elastic
-                              × (POP_dens_route[c]/POP_dens_DEU)    ← exposure
-   + VF_infra[vehicle, route] × (PPP[c]/PPP[DEU])                   ← price-elastic
-   + VF_energy[vehicle, route] × (emission_int[c]/emission_int[DEU])← mix-elastic
-```
+  =  VF_ghg    × EUR_USD[2025]
+   + VF_ap     × (GDP_pc_PPP[c] / GDP_pc_PPP[DEU])^ε_h
+               × (POP_dens_route[c] / POP_dens_route[DEU])
+   + VF_infra  × (PPP[c] / PPP[DEU])
+   + VF_energy × (emission_intensity[c] / emission_intensity[DEU])
 
-**Note on route types:** Urban values (Table 15/16) require country-specific
-urban population density along roads. If not available, use the `all_routes`
-values (Table 9/10) as the default transfer base.
-
----
-
-## Indicator 07 — Passenger and Freight Transport — per Pkm or tkm (`transport_pkm_tkm`)
-
-**UBA source:** Tables 17–18, occupation/utilization rates and total VF per
-passenger-km or tonne-km
-
-**Value transfer approach: Derived from indicator 06 + country occupation rates**
-
-Per-Pkm/tkm factors are vehicle-km factors divided by occupation or load rates.
-These rates vary by country (e.g. higher car occupancy in developing countries).
-
-### Transfer formula
-
-```
 D[Pkm, vehicle, c]  =  D[vehkm, vehicle, c]  /  occupancy_rate[vehicle, c]
-
-where occupancy_rate[vehicle, c] comes from national transport statistics
-(Eurostat, ITF, national travel surveys).
 ```
-
-If country-specific occupancy rates are unavailable, use the German rates from
-Table 17 as a fallback (conservative proxy for OECD countries; likely
-underestimates per-km damage in countries with higher vehicle utilization).
 
 ---
 
-## Indicator 08 — Traffic Noise (`noise`)
+### 5.12 Agriculture — per kg Product and per kg Nutrient Surplus (UBA only)
 
-**UBA source:** Tables 19–20, annoyance and cognitive-impairment value factors
-per person per year by dB(A) class and transport mode
+**UBA script:** `10_agriculture` (Tables 25–27) | Items: Milk, Beef, Pork,
+Poultry, Eggs, N fertilizer, P fertilizer, N surplus, P surplus | Unit: EUR 2025/kg.
 
-**UBA scope:** Germany-specific WTP (contingent valuation studies, German income
-base); exposure function derived from European WHO guidelines
+**UBA scope limitation:** Explicitly excludes biodiversity, ecosystem services
+beyond N/P, and animal welfare. Values are partial lower bounds.
 
-**Value transfer approach: Value Function Transfer (VFT)**
-
-Noise annoyance WTP is strongly income-elastic. The noise exposure–response
-function (WHO ERF, Guski et al. 2017) is treated as universal; only the
-monetary per-DALY value is transferred.
-
-### Transfer formula
-
-```
-D[noise, dBclass, mode, c]
-  =  UBA_VF[noise, dBclass, mode]
-     × (GDP_pc[c] / GDP_pc[DEU])^ε_noise
-     × EUR_USD_2025
-
-where:
-  ε_noise  ≈ 0.8  (income elasticity for noise annoyance WTP,
-                    based on meta-analyses by Navrud 2002; Dekkers & van der Straaten 2009)
-```
-
-**Per-person-year to per-vehicle-km conversion:**
-
-To integrate with the transport indicator, multiply by estimated noise-exposed
-population per vehicle-km. This requires country-level road network density and
-population along road corridors (available from OpenStreetMap / Global Urban
-Network datasets).
-
----
-
-## Indicator 09 — Nitrogen and Phosphorus Emissions (`nitrogen_phosphorus`)
-
-**UBA source:** Tables 22–24, value factors per kg N or P emitted to air or water
-
-**UBA scope:** Germany-specific; limiting-substance assumption applied to
-German water bodies (mesotrophic inland waters, German coastal waters)
-
-**Value transfer approach: Parameter Transfer (PT) — water scarcity and
-eutrophication sensitivity differ substantially by country**
-
-### Transfer formula
-
-#### Air emissions (N, Table 22)
-
-NOₓ and NH₃ air emission values (per kg N) derive from health damage — transfer
-as per indicator 02 (income-elastic, population-density scaled):
-
-```
-D[NOx_air, c]  =  UBA_VF[NOx, air]
-                   × (GDP_pc[c] / GDP_pc[DEU])^ε_health
-                   × (POP_density[c] / POP_density[DEU])
-                   × EUR_USD_2025
-```
-
-#### Water emissions (N, P — Tables 23–24)
-
-Eutrophication damage scales with:
-(a) **water scarcity**: scarcer water = higher damage per kg nutrient (AWARE factors)
-(b) **ecosystem sensitivity**: nutrient thresholds vary by water body type
-(c) **WTP for aquatic ecosystem quality**: income-elastic
-
-```
-D[N_water, c]  =  UBA_VF[N, inland_waters]
-                   × AWARE[c]                      ← water scarcity factor (0.1–100)
-                   × (GDP_pc[c] / GDP_pc[DEU])^ε_eco
-                   × EUR_USD_2025
-
-ε_eco  ≈ 0.4–0.6  (lower elasticity than health; based on biodiversity WTP literature)
-```
-
-The limiting-substance correction (N vs P limiting) should be re-evaluated
-per country using national eutrophication monitoring data where available
-(EEA, national water agencies).
-
----
-
-## Indicator 10 — Agriculture (`agriculture`)
-
-**UBA source:** Tables 25–27, value factors for animal products (per kg),
-fertilizer application (per kg applied), nutrient surplus (per kg excess)
-
-**UBA scope:** Germany-specific (conventional German agriculture, German input
-and output prices)
-
-**Value transfer approach: Component-wise UVT + VFT**
-
-Agricultural value factors integrate multiple damage pathways with different
-transfer requirements:
-
-| Sub-table | Dominant pathway | Transfer method |
-|---|---|---|
-| Table 25 (animal products) | GHG + NH₃ + N₂O | Transfer each pathway via indicators 01 and 09; recombine |
-| Table 26 (fertilizer application) | N leaching + GHG | PT: scale by country N surplus intensity and leaching risk |
-| Table 27 (nutrient surplus) | Water eutrophication | PT: same as indicator 09 (N, P water) |
-
-### Transfer formula for animal products
+**Value transfer — component reconstruction:**
 
 ```
 D[beef, c]
-  =  D[GHG, CO2eq/kg_beef, c]           ← from indicator 01 (global)
-   + D[NH3, kg/kg_beef, c]              ← from indicator 02 (country-adjusted)
-   + D[N2O, kg/kg_beef, c]              ← from indicator 01 (global)
-   + D[land_use, ha/kg_beef, c]         ← from land use (PPP-adjusted)
+  =  GHG_intensity[beef] × D[CO2eq, c]          ← UVT (global, indicator 3.1)
+   + NH3_intensity[beef] × D[NH3_health, c]      ← VFT (air AP, indicator 3.2)
+   + N2O_intensity[beef] × D[N2O, c]             ← UVT (global, indicator 3.1)
+   + land_intensity[beef] × D[land_use, c]       ← WifOR land use (indicator 4.1)
+
+where physical emission intensities per kg product:
+  from IPCC Tier 2 livestock emission factors / FAO GLEAM database
 ```
 
-Where `CO2eq/kg_beef`, `NH3/kg_beef`, etc. are physical emission intensities
-per kg of product (from IPCC/FAO lifecycle inventories for livestock).
-
-This reconstructs the animal product value factor from its constituent damage
-pathways, each transferred appropriately.
+For fertilizer application (Table 26) and nutrient surplus (Table 27):
+apply the same PT approach as indicator 3.3 (N/P to water), scaled by
+AWARE water scarcity and income elasticity.
 
 ---
 
-## Summary Table: Value Transfer by Indicator
+## 6. Summary: Value Transfer by Indicator
 
-| ID | Key | UBA scope | Transfer approach | Country variation | Sector variation |
-|----|-----|-----------|-------------------|-------------------|------------------|
-| 01 | ghg | Global (GIVE model) | UVT (currency only) | None | None |
-| 02 | air_pollutants | Germany | VFT + PT | Income + pop. density | By source type (Table 2/3/4) |
-| 03 | electricity | Germany | PT (energy mix) | Country energy mix | None (commodity) |
-| 04 | heat | Germany | PT (energy mix) | Country energy mix | None |
-| 05 | refrigerants | Global (via GWP100 × CO₂) | UVT (currency only) | None | None |
-| 06 | transport_vehkm | Germany | Component-wise VFT + PT | Per component | By route type |
-| 07 | transport_pkm_tkm | Germany | Derived from 06 + occupancy | As indicator 06 | None |
-| 08 | noise | Germany | VFT (income elasticity) | Income-scaled | None |
-| 09 | nitrogen_phosphorus | Germany | PT (AWARE) + VFT | Water scarcity + income | None |
-| 10 | agriculture | Germany | Component-wise (01 + 02 + 09) | Per pathway | None |
+| # | Indicator | WifOR | EPS | UBA | Transfer method | Country variation | ε |
+|---|-----------|:-----:|:---:|:---:|-----------------|-------------------|---|
+| 3.1 | GHG (CO₂, CH₄, N₂O) | ✓ | ✓ | ✓ | UVT (climate damage global) | None | — |
+| 3.2 | Air pollutants (PM, NOₓ, SO₂, NH₃, NMVOC) | ✓ | ✓ | ✓ | VFT + PT | Income + pop. density | 0.8–1.0 (health) |
+| 3.3 | Nitrogen & phosphorus to water | ✓ | ✓ | ✓ | PT + VFT | AWARE + income | 0.4–0.6 (eco) |
+| 4.1 | Land use | ✓ | ✓ | — | VFT (from WifOR primary) | Income | 0.4–0.6 |
+| 4.2 | Noise | — | ✓ | ✓ | VFT | Income | 0.8 |
+| 4.3 | Waste | ✓ | ✓ | — | VFT (from WifOR primary) | Income | 0.4–0.6 |
+| 4.4 | Heavy metals & toxics | ✓ | ✓ | — | VFT + PT | Income + pop. density | 0.8–1.0 (health) |
+| 4.5 | Halogenated / refrigerants | — | ✓ | ✓ | UVT (climate share); VFT (ozone + toxicity share) | None (climate); income (other) | 0.8–1.0 |
+| 5.1 | Water consumption | ✓ | — | — | Already country-specific | — | — |
+| 5.2 | Training | ✓ | — | — | Already country-specific | — | — |
+| 5.3 | OHS | ✓ | — | — | Already country-specific | — | — |
+| 5.4 | Fossil resources | — | ✓ | — | VFT (from SWE) | Income | 0.5–0.8 |
+| 5.5 | VOCs (detailed) | — | ✓ | — | VFT + PT (from SWE) | Income + pop. density | 0.8–1.0 |
+| 5.6 | Radionuclides | — | ✓ | — | VFT (from SWE) | Income | 0.8–1.0 |
+| 5.7 | Pesticides | — | ✓ | — | VFT (from SWE) | Income | 0.4–0.6 |
+| 5.8 | Critical minerals | — | ✓ | — | UVT (resource; globally uniform) | None | — |
+| 5.9 | Electricity (per kWh by source) | — | — | ✓ | PT (energy mix) + VFT (AP component) | Country mix + income | 0.8–1.0 |
+| 5.10 | Heat (per kWh by source) | — | — | ✓ | PT (heating mix) + VFT (AP component) | Country mix + income | 0.8–1.0 |
+| 5.11 | Transport (vehicle-km; Pkm/tkm) | — | — | ✓ | Component-wise VFT + PT | Per component | 0.8–1.0 |
+| 5.12 | Agriculture | — | — | ✓ | Component reconstruction from 3.1 + 3.2 + 3.3 | Per pathway | varies |
 
 ---
 
-## Required Datasets for Full Implementation
+## 7. Required Datasets for Full Implementation
 
 | Dataset | Used by | Source |
-|---|---|---|
-| GDP per capita (PPP, 2025) | 02, 06, 07, 08, 09, 10 | World Bank WDI |
-| EUR/USD exchange rate 2025 | All | ECB / World Bank |
-| USA GDP deflator (time series) | All | World Bank WDI |
-| Population density by country | 02, 06, 08 | World Bank / UN DESA |
-| Urban population density along roads | 06, 08 | Global Urban Road Network |
-| Electricity generation mix by country | 03, 04 | IEA World Energy Balances / Ember |
-| Upstream GHG intensity of electricity (kg/kWh) | 03 | IPCC AR6 lifecycle values |
-| National vehicle occupancy and load rates | 07 | ITF / national surveys |
-| AWARE water scarcity factors by country | 09, 10 | WULCA AWARE v2 |
-| Physical emission intensities for livestock | 10 | IPCC Tier 2 / FAO GLEAM |
-| Income elasticity literature values | 02, 06, 08, 09 | Navrud 2002; Dekkers 2009; EC IMPACT |
+|---------|---------|--------|
+| GDP per capita, PPP (2015 and 2025) | All VFT indicators | World Bank WDI |
+| EUR/USD exchange rate (2015, 2025) | EPS, UBA → USD | ECB / World Bank |
+| SEK/EUR exchange rate (2015) | EPS → EUR if needed | ECB |
+| USA GDP deflator (time series 2014–2100) | All | World Bank WDI |
+| EU HICP deflator (2015–2024; frozen post-2023) | EPS temporal adjustment | Eurostat |
+| Population density by country | Air pollutants, noise, transport | World Bank / UN DESA |
+| Urban population density along road corridors | Transport (AP component) | OpenStreetMap / Global Urban Network |
+| Electricity generation mix by country and source | Electricity, heat | IEA World Energy Balances / Ember |
+| Upstream GHG intensity of electricity (kg CO₂e/kWh) | Electricity | IPCC AR6 lifecycle values |
+| National heating fuel mix | Heat | IEA / Eurostat Energy Balances |
+| National vehicle occupancy and freight load rates | Transport Pkm/tkm | ITF / national travel surveys |
+| AWARE water scarcity factors by country | N/P water, agriculture | WULCA AWARE v2 |
+| Physical emission intensities for livestock | Agriculture | IPCC Tier 2 / FAO GLEAM |
+| GWP100 values by refrigerant | Refrigerants | IPCC AR6 Table 7.SM.7 |
 
 ---
 
-## Integration into the Transitionvaluation Coefficient Matrix
+## 8. Integration into the Transitionvaluation Coefficient Matrix
 
-Once value-transferred, each UBA indicator produces a DataFrame conforming to
-the WifOR transitionvaluation convention:
-
-```python
-# Row MultiIndex:    (Year, Variable)
-# Column MultiIndex: (GeoRegion, NACE)
-
-# Example for ghg, CO2, 0% PRTP, year 2025:
-C.loc[("2025", "UBA_GHG_CO2_0pct_PRTP, in USD/t (UBA2025)"), ("DEU", "A")]
-# → -0.990 × 1.07 × I_USD[2025]
-
-# For air pollutants, PM2.5, health, Germany:
-C.loc[("2025", "UBA_AirPollutants_PM2.5_health, in USD/t (UBA2025)"), ("DEU", "A")]
-# → -128200 × 1.07 × I_USD[2025]
-
-# For Brazil (income-adjusted, lower GDP/cap than Germany):
-C.loc[("2025", "UBA_AirPollutants_PM2.5_health, in USD/t (UBA2025)"), ("BRA", "A")]
-# → -128200 × (GDP_pc[BRA]/GDP_pc[DEU])^0.9 × pop_dens_factor × 1.07 × I_USD[2025]
-```
-
-### Output file naming
-
-Following the steen-vf1 / WifOR convention:
+All transferred values produce a DataFrame conforming to the WifOR convention:
 
 ```
-output/
-  11_uba4_ghg_transferred.h5
-  12_uba4_air_pollutants_transferred.h5
-  13_uba4_electricity_transferred.h5
-  ...
+Row MultiIndex:    (Year, Variable)
+Column MultiIndex: (GeoRegion, NACE)
+
+Variable naming convention:
+  {System}_{Indicator}_{Substance/Context}_{Unit} ({PriceBase})
+
+Examples:
+  "WifOR_GHG_CO2eq, in USD/t CO2e (WifOR2020)"
+  "EPS_InorgGas_CO2, in USD/kg (EPS2015)"
+  "UBA_GHG_CO2_0pctPRTP, in USD/t (UBA2025)"
+  "UBA_AirPollutants_PM2.5_health_unknownSource, in USD/t (UBA2025)"
+  "EPS_Particles_PM2.5, in USD/kg (EPS2015)"
+  "UBA_Noise_Road_50-54dB, in USD/person/yr (UBA2025)"
+  "EPS_LandUse_Arable, in USD/m2yr (EPS2015)"
 ```
 
-Each `.h5` file contains keys `"coefficient"` and `"unit"` matching the
-WifOR HDF5 schema.
+### Precedence rules when same indicator covered by multiple systems
+
+Where two or three systems cover the same indicator, the following precedence
+is suggested for the primary coefficient matrix. All alternatives are retained
+as supplementary Variable rows for sensitivity analysis.
+
+| Indicator | Primary | Supplementary | Rationale |
+|-----------|---------|--------------|-----------|
+| GHG | UBA (0 % PRTP) | WifOR, EPS | GIVE model most current; explicit PRTP; direct CH₄/N₂O modelling |
+| Air pollutants | WifOR | UBA, EPS | Already country-differentiated; consistent with other WifOR indicators |
+| N/P to water | WifOR | UBA, EPS | Country-specific; UBA limiting-substance is conservative lower bound |
+| Noise | UBA | EPS | More granular (mode + dB class); updated 2025 income anchor |
+| Land use | WifOR | EPS | Already country-differentiated; consistent with WifOR ecosystem framework |
+| Waste | WifOR | EPS | Already country-differentiated; broader waste stream coverage than EPS |
+| Refrigerants/HFCs | UBA + EPS | — | UBA: climate; EPS: supplement for ozone + toxicity pathways |
 
 ---
 
-## Limitations and Caveats
+## 9. Limitations and Caveats
 
-1. **Germany-specific dose-response functions.** Tables 3 and 4 use EcoSenseWeb
-   v1.3 with German receptor data. Parameter transfer (population density) is a
-   first-order approximation; full spatial modelling would require running
-   EcoSenseWeb for each target country.
+1. **Sweden anchor (EPS):** EPS monetary values are derived from Swedish/European
+   WTP studies. Income transfer to non-OECD countries using ε ≈ 0.8 is a
+   first-order approximation. Benefit transfer uncertainty is highest in low-
+   income countries (>± 50 % is plausible).
 
-2. **Limiting-substance assumption (N/P water).** UBA applies the conservative
-   lower-bound (limiting substance only). In countries where both N and P are
-   simultaneously limiting, the true damage is higher.
+2. **Germany anchor (UBA):** Germany has above-average population density.
+   Population-density transfer to sparsely populated countries (Canada, Australia,
+   much of Africa) will yield substantially lower air pollutant values. This is
+   methodologically correct but should be noted in reporting.
 
-3. **Agriculture excludes biodiversity and animal welfare.** UBA explicitly
-   excludes these pathways. Any value transfer inherits this limitation.
+3. **UBA limiting-substance assumption:** For N/P water emissions, UBA applies
+   the conservative lower bound (only the limiting nutrient is charged). This
+   underestimates damage in countries where both N and P co-limit aquatic systems.
+   Supplement with EPS or WifOR values in such cases.
 
-4. **PRTP scenario selection.** For integration into a single coefficient matrix,
-   choose one PRTP scenario (0 % for long-term/intergenerational analysis;
-   1 % for conventional cost-benefit analysis) or maintain both as separate
-   Variable rows.
+4. **UBA agriculture lower bounds:** UBA agriculture factors explicitly exclude
+   biodiversity, ecosystem services beyond N/P, and animal welfare. Any transfer
+   inherits these omissions. The reconstructed D[beef, c] from indicator 5.12
+   should be treated as a partial lower bound.
 
-5. **Currency base.** UBA values are EUR_2025. After EUR/USD conversion, the
-   temporal deflation uses the USA GDP deflator (WifOR convention), not the
-   EU HICP deflator used in the steen-vf1 pipeline. This is intentional for
-   WifOR framework compatibility.
+5. **PRTP scenario selection:** For a single-scenario coefficient matrix, choose
+   0 % PRTP for long-term or intergenerational analysis; 1 % PRTP for conventional
+   cost-benefit analysis. Maintain both as separate Variable rows for full
+   sensitivity coverage.
+
+6. **Currency base consistency:** EPS is EUR_2015; UBA is EUR_2025; WifOR is USD
+   (mixed). All must be converted to USD at the relevant year's exchange rate
+   before applying I_USD[y] temporal deflation. Do not mix price bases within
+   a single coefficient series.
+
+7. **Double-counting:** UBA electricity/heat value factors already embed the GHG
+   and air pollutant damage of upstream fuel supply. Do not add standalone GHG or
+   air pollutant VFs to electricity VFs when constructing sector-level totals.
 
 ---
 
-## References
+## 10. References
 
-- Eser, N., Matthey, A., Bünger, B. (2025). UBA Handbook on Environmental Value Factors, MC 4.0.
-- Anthoff, D. (2025). GIVE model.
+- Eser, N., Matthey, A., Bünger, B. (2025). UBA Handbook on Environmental Value Factors, MC 4.0. German Environment Agency.
+- Steen, B. (2015). EPS 2015d.1 — Environmental Priority Strategies in product development. Swedish Life Cycle Center, Chalmers University.
+- Anthoff, D. (2025). GIVE model — Global Impacts and Valuation of Emissions.
+- Nordhaus, W., Barrage, L. (2024). DICE/RICE model update.
 - Navrud, S. (2002). The State of the Art on Economic Valuation of Noise. EC DG Environment.
-- Dekkers, J., van der Straaten, W. (2009). Monetary valuation of aircraft noise. *Ecol. Econ.*
+- Dekkers, J., van der Straaten, W. (2009). Monetary valuation of aircraft noise. *Ecological Economics*.
 - Guski, R. et al. (2017). WHO Environmental Noise Guidelines for the European Region.
-- Chen, J., Hoek, G. (2020). Long-term exposure to PM and mortality. *Environ. Health Perspect.*
+- Chen, J., Hoek, G. (2020). Long-term exposure to PM and all-cause and cause-specific mortality. *Environmental Health Perspectives*.
 - WULCA (2021). AWARE v2 — Available Water Remaining characterisation factors.
-- World Bank (2025). World Development Indicators (GDP per capita, deflators).
+- Psacharopoulos, G., Patrinos, H.A. (2018). Returns to investment in education: a decennial review of the global literature. *Education Economics*.
+- World Bank (2025). World Development Indicators (GDP per capita PPP, deflators).
 - IEA (2025). World Energy Balances.
-- Steen, B. (2015). EPS 2015d.1 — Environmental Priority Strategies.
+- Karzai, S., Hirschfeld, J. (2024). Environmental costs of agricultural production. German Environment Agency working paper.
 
 ---
 
 *Scripts: Dr Dimitrij Euler, Greenings (dimitrij.euler@greenings.org), with support of Claude Code (Anthropic) |
-Handbook: Nadia Eser, Dr. Astrid Matthey, Dr. Björn Bünger — German Environment Agency (UBA), December 2025 | Document Version 1.0 | Last Updated 2026-03-05*
+EPS Value Factors: Steen (2015), Swedish Life Cycle Center, Chalmers University |
+WifOR Value Factors: WifOR Institute for Economic Research |
+UBA Handbook: Nadia Eser, Dr. Astrid Matthey, Dr. Björn Bünger — German Environment Agency (UBA), December 2025 |
+Document Version 2.0 | Last Updated 2026-03-05*
