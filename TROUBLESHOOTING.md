@@ -1,22 +1,29 @@
 # Troubleshooting Guide
 
-**WifOR Value Factors - Common Issues and Solutions**
+**All Three Value Factor Systems — WifOR · EPS (Steen / Stockholm) · UBA MC 4.0**
 **Organization**: Transition Valuation Project under Greenings custodianship
-**Version**: 1.0
-**Last Updated**: 2026-01-02
+**Version**: 2.0
+**Last Updated**: 2026-03-06
 
-This document provides solutions to common problems encountered when using the WifOR Value Factors scripts.
+This document provides solutions to common problems encountered when using any of the three value factor submodules. Sections 1–6 cover WifOR (`value-factors/`). Sections 7–8 cover EPS (`stockholm-value-factors/`) and UBA (`uba-value-factors/`) respectively.
 
 ---
 
 ## Table of Contents
 
+**WifOR (`value-factors/`)**
 1. [Installation Issues](#installation-issues)
 2. [Data File Issues](#data-file-issues)
 3. [Execution Errors](#execution-errors)
 4. [Output Validation Issues](#output-validation-issues)
 5. [Performance Issues](#performance-issues)
 6. [Configuration Issues](#configuration-issues)
+
+**EPS (`stockholm-value-factors/`)**
+7. [EPS-Specific Issues](#eps-specific-issues)
+
+**UBA (`uba-value-factors/`)**
+8. [UBA-Specific Issues](#uba-specific-issues)
 
 ---
 
@@ -445,48 +452,182 @@ h5dump -H input_data/file.h5
 
 ---
 
+---
+
+## 7. EPS-Specific Issues
+
+### Issue E1: `data/` folder missing
+
+**Symptom**:
+```
+FileNotFoundError: No such file or directory: 'data/...'
+```
+
+**Cause**: The `stockholm-value-factors/data/` folder was not cloned or copied.
+
+**Solution**: Copy the `data/` folder from the source repository or from a local reference copy:
+```bash
+# If you have a local reference copy (e.g. steen-vf1):
+cp -r /path/to/steen-vf1/eps_value_factors/data/ stockholm-value-factors/data/
+```
+
+---
+
+### Issue E2: ELU values appear as zero or NaN
+
+**Symptom**: EPS output coefficients are 0.0 or NaN for all substances.
+
+**Cause**: Substance characterisation factors not parsed correctly from source data.
+
+**Solution**:
+1. Verify that `data/` contains the correct EPS 2015d.1 source files.
+2. Check that the source file encoding is UTF-8 (not Latin-1); some EPS CSV files use semicolons as delimiters:
+   ```python
+   pd.read_csv("data/eps_factors.csv", sep=";", encoding="utf-8")
+   ```
+
+---
+
+### Issue E3: All countries show identical values
+
+**Symptom**: Every country has the same coefficient for a given substance and year.
+
+**Explanation**: This is **expected behaviour**. EPS 2015d.1 publishes globally uniform characterisation factors — no country differentiation is applied within the EPS pipeline. Country-specific values are produced only after value transfer (see `VALUE_TRANSFER.md`).
+
+---
+
+### Issue E4: Noise unit mismatch vs UBA noise
+
+**Symptom**: EPS noise unit is `ELU/W` (relative acoustic power); UBA noise is `EUR/person/year`.
+
+**Explanation**: These are fundamentally different emission units. EPS noise requires conversion via the WHO exposure-response function (% highly annoyed per dB(A)) before comparison with UBA noise values. See `VALUE_TRANSFER.md` section 4.2.
+
+---
+
+### Issue E5: HICP deflator frozen at 2023 for years 2024+
+
+**Symptom**: EPS coefficients are identical for all years 2023–2100.
+
+**Explanation**: This is **expected behaviour**. The EU HICP deflator is only available through 2023. For years 2024 and beyond, the deflator is frozen at the 2023 value (factor 1.241 relative to 2015 base). This is documented in `stockholm-value-factors/VALIDATION_REPORT.md`.
+
+---
+
+## 8. UBA-Specific Issues
+
+### Issue U1: `openpyxl` not installed
+
+**Symptom**:
+```
+ModuleNotFoundError: No module named 'openpyxl'
+```
+
+**Solution**:
+```bash
+pip install openpyxl
+```
+
+---
+
+### Issue U2: Row count mismatch
+
+**Symptom**: A table group produces fewer rows than expected.
+
+**Expected counts** (from `VALIDATION_REPORT.md` in `uba-value-factors/`):
+
+| Key | Expected |
+|-----|----------|
+| ghg | 54 |
+| air_pollutants | 133 |
+| electricity | 45 |
+| heat | 45 |
+| refrigerants | 16 |
+| transport_vehkm | 142 |
+| transport_pkm_tkm | 38 |
+| noise | 42 |
+| nitrogen_phosphorus | 11 |
+| agriculture | 20 |
+
+**Solution**: Row counts are determined by the hard-coded data structures in `pipeline.py`. A mismatch means the data was edited incorrectly. Restore the original data tuples and re-run.
+
+---
+
+### Issue U3: Reference value does not match PDF
+
+**Symptom**: CO₂ 2025 / 0 % PRTP ≠ 990 EUR/t, or PM₂.₅ health ≠ 128,200 EUR/t.
+
+**Cause**: A value was accidentally changed in `pipeline.py`.
+
+**Solution**: Cross-check the data tuple against the UBA MC 4.0 PDF (Table 1 for GHG, Table 2 for air pollutants). All data in `pipeline.py` is manually transcribed. See `uba-value-factors/VALIDATION_REPORT.md` for the full set of known-good reference values.
+
+---
+
+### Issue U4: Excel file not written
+
+**Symptom**: CSV files are created but `.xlsx` files are absent.
+
+**Cause**: `openpyxl` not installed, or `_write_excel()` raised an exception that was silently swallowed.
+
+**Solution**:
+```bash
+pip install openpyxl
+# Then re-run:
+python extract_uba_values.py
+```
+Check the execution log (`execution_log_*.txt`) for `[FAIL]` entries with error messages.
+
+---
+
+### Issue U5: `tables/NN_key.py` script not found
+
+**Symptom**:
+```
+python: can't open file 'tables/01_ghg.py': No such file or directory
+```
+
+**Cause**: The `tables/` subdirectory was not cloned correctly (possibly a shallow clone).
+
+**Solution**:
+```bash
+git -C uba-value-factors/ fetch --unshallow
+# Or run from the orchestrator instead:
+python uba-value-factors/extract_uba_values.py --only ghg
+```
+
+---
+
 ## Getting Help
 
-If issues persist:
+| System | First step | GitHub Issues | Email |
+|--------|-----------|--------------|-------|
+| WifOR | README.md → METHODOLOGY.md | github.com/wifor-impactanalysis/WifOR-Value-Factors/issues | dimitrij.euler@greenings.org |
+| EPS (Steen) | stockholm-value-factors/README.md | github.com/d1mitrij/Stockholm_ValueFactors/issues | dimitrij.euler@greenings.org |
+| UBA MC 4.0 | uba-value-factors/README.md | github.com/d1mitrij/UBA_ValueFactors/issues | dimitrij.euler@greenings.org |
 
-1. **Check Existing Documentation**:
-   - README.md
-   - METHODOLOGY.md
-   - DATA_UPDATES.md
-
-2. **Search GitHub Issues**:
-   - https://github.com/wifor-impactanalysis/WifOR-Value-Factors/issues
-
-3. **Create New Issue**:
-   Include:
-   - Error message (full traceback)
-   - Script being run
-   - Python version: `python --version`
-   - Package versions: `pip list`
-   - Operating system
-
-4. **Email Support**:
-   - dimitrij.euler@greenings.org
+When filing an issue include: full error traceback, script name, Python version (`python --version`), package versions (`pip list`), and operating system.
 
 ---
 
 ## Common Error Messages Reference
 
-| Error Message | Issue # | Quick Fix |
-|---------------|---------|-----------|
-| `License acceptance cancelled` | 1 | Run `python license_check.py` |
-| `ModuleNotFoundError` | 2 | Run `pip install -r requirements.txt` |
-| `FileNotFoundError: input_data/` | 3 | Run `python download_assets.py` |
-| `KeyError: 'costs'` | 8 | Check input file column names |
-| `MemoryError` | 9 | Reduce `--max-workers` |
-| `Worksheet not found` | 5 | Verify Excel sheet names |
-| `KeyError: 'No object'` | 6 | Check HDF5 keys |
-| Positive damage coefficients | 11 | Check `coefficient_sign = -1.0` |
-| Negative training coefficients | 12 | Check `coefficient_sign = 1.0` |
+| Error Message | System | Issue # | Quick Fix |
+|---------------|--------|---------|-----------|
+| `License acceptance cancelled` | WifOR | E1 in WifOR | Run `python license_check.py` |
+| `ModuleNotFoundError` | All | 2 / U1 | `pip install -r requirements.txt` |
+| `FileNotFoundError: input_data/` | WifOR | 3 | `python download_assets.py` |
+| `FileNotFoundError: data/` | EPS | E1 | Copy `data/` from reference |
+| `KeyError: 'costs'` | WifOR | 8 | Check input file column names |
+| `MemoryError` | WifOR | 9 | Reduce `--max-workers` |
+| `Worksheet not found` | WifOR | 5 | Verify Excel sheet names |
+| `KeyError: 'No object'` | WifOR | 6 | Check HDF5 keys |
+| Positive damage coefficients | WifOR | 11 | Check `coefficient_sign = -1.0` |
+| Negative training coefficients | WifOR | 12 | Check `coefficient_sign = 1.0` |
+| All EPS countries identical | EPS | E3 | Expected — see E3 explanation |
+| UBA row count mismatch | UBA | U2 | Restore `pipeline.py` data tuples |
+| UBA reference value wrong | UBA | U3 | Cross-check against PDF Table 1/2 |
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-02
-**Maintained by**: WifOR Development Team
+**Document Version**: 2.0
+**Last Updated**: 2026-03-06
+**Maintained by**: Dr Dimitrij Euler, Greenings
 **Contact**: dimitrij.euler@greenings.org

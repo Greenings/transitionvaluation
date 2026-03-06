@@ -1,11 +1,21 @@
 # Validation Report Template
 
-**WifOR Value Factors - Output Quality Assurance**
+**All Three Value Factor Systems — WifOR · EPS (Steen / Stockholm) · UBA MC 4.0**
 **Organization**: Transition Valuation Project under Greenings custodianship
-**Version**: 1.0
-**Last Updated**: 2026-01-02
+**Version**: 2.0
+**Last Updated**: 2026-03-05
 
-This document provides a template for validating value factor outputs and documenting quality checks.
+This document provides a template for validating the outputs of all three value factor
+submodules: WifOR (`value-factors/`), EPS 2015d.1 (`stockholm-value-factors/`), and
+UBA MC 4.0 (`uba-value-factors/`). Run each section after executing the respective pipeline.
+
+### System overview
+
+| System | Script | Expected output | Countries | Substances / rows |
+|--------|--------|----------------|-----------|-------------------|
+| WifOR | `run_all_value_factors.py` | 8 × `.h5` + `.xlsx` | 188 | 8 indicator groups |
+| EPS (Steen) | `run_all_eps_factors.py` | 12 × `.h5` + `.xlsx` | 189 | 892 substances |
+| UBA MC 4.0 | `extract_uba_values.py` | 10 × `.csv` + `.xlsx` | 1 (DEU) | 546 rows |
 
 ---
 
@@ -41,6 +51,10 @@ When validating outputs, expect:
 - README.md → "Understanding 'Damage or Value to Society'" section
 
 ---
+
+---
+
+# Part A — WifOR Value Factors (`value-factors/`)
 
 ## Validation Checklist
 
@@ -473,7 +487,233 @@ print("="*70)
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-02
-**Maintained by**: WifOR Development Team
+---
+
+# Part B — EPS Value Factors (`stockholm-value-factors/`)
+
+**System:** EPS 2015d.1 — Environmental Priority Strategies
+**Source:** Steen (2015), Swedish Life Cycle Center, Chalmers University of Technology
+**Geographic anchor:** Sweden (globally applied via VFT; no built-in country differentiation)
+**Price base:** EUR 2015 (Environmental Load Units, ELU ≈ EUR); EU HICP deflator applied
+
+---
+
+## B.1 Pre-Execution Validation
+
+### B.1.1 Input Data Files Present
+
+Navigate to `stockholm-value-factors/`:
+
+- [ ] `data/` folder exists with EPS source CSV/Excel files (substance characterisation factors)
+- [ ] `config.py` exists and is valid
+- [ ] Python environment has: `pandas`, `numpy`, `openpyxl`, `tables`
+
+### B.1.2 License / Attribution
+
+EPS 2015d.1 is freely available but requires attribution to Steen (2015) and the Swedish Life Cycle Center. No separate license acceptance file is needed.
+
+---
+
+## B.2 Execution Validation
+
+Run from `stockholm-value-factors/`:
+
+```bash
+python run_all_eps_factors.py
+```
+
+### B.2.1 Script Execution Status
+
+| Script / Category | Status | Rows expected | Notes |
+|-------------------|--------|---------------|-------|
+| 001 Inorganic gases | [ ] Pass / [ ] Fail | 16 substances | CO₂, CH₄, N₂O, SO₂, NOₓ, NH₃, O₃, HF, HCl, HBr, HCN, H₂S, HNO₂, HNO₃, Hg variants |
+| 002 Particles | [ ] Pass / [ ] Fail | 14 substances | PM>10, PM10, PM2.5, ultrafine, metals, PAH |
+| 003 VOCs | [ ] Pass / [ ] Fail | 144 substances | Alkanes, aromatics, alcohols, aldehydes, terpenes, chlorinated |
+| 004 Halogenated organics | [ ] Pass / [ ] Fail | 283 substances | CFCs, HCFCs, HFCs, PFCs, halons |
+| 005 Emissions to water | [ ] Pass / [ ] Fail | 14 substances | BOD, COD, N, P, heavy metals |
+| 006 Pesticides | [ ] Pass / [ ] Fail | 302 substances | Herbicides, insecticides, fungicides |
+| 007 Noise | [ ] Pass / [ ] Fail | 2 substances | Road traffic noise (ELU/W) |
+| 008 Radionuclides | [ ] Pass / [ ] Fail | 11 substances | C-14, H-3, I-129, Kr-85, Pb-210, and others |
+| 009 Land use | [ ] Pass / [ ] Fail | 23 categories | Residential, arable, forestry, mining, corridors |
+| 010 Fossil resources | [ ] Pass / [ ] Fail | 4 substances | Oil, coal, lignite, natural gas |
+| 011 Other elements | [ ] Pass / [ ] Fail | 77 substances | Ag, rare earths, PGMs, Li, Co, In, Ga, Zr |
+| 012 Waste (litter) | [ ] Pass / [ ] Fail | 2 substances | Litter to ground, plastic litter to water |
+| **Total** | | **892 substances** | |
+
+**Execution time expected:** < 60 seconds
+
+---
+
+## B.3 Output File Validation
+
+### B.3.1 Files Generated
+
+Navigate to `stockholm-value-factors/output/`:
+
+- [ ] 12 indicator files (`NNN_uba4_*.csv` or `.h5`/`.xlsx` per pipeline convention)
+- [ ] Execution log written
+
+### B.3.2 Dimension Check
+
+| Category | Years | Countries | Sectors | Sign |
+|----------|-------|-----------|---------|------|
+| All 12 categories | 19 (2014–2030, 2050, 2100) | 189 | 21 NACE | All negative (−1.0) |
+
+**Critical:** EPS has NO country differentiation in its published values — all 189 countries carry the same ELU/kg coefficient before income-based value transfer. Verify this is preserved in the output (uniform columns across countries).
+
+### B.3.3 Reference Values
+
+| Substance | EPS index value | Unit | Notes |
+|-----------|----------------|------|-------|
+| CO₂ | ~0.05–0.10 | ELU/kg | Climate damage pathway sum |
+| PM₂.₅ | >CO₂ per kg | ELU/kg | Health (YOLL) dominant |
+| NOₓ | intermediate | ELU/kg | Health + acid deposition |
+| SO₂ | intermediate | ELU/kg | Health + acid deposition |
+
+Cross-check against Steen (2015) Table A.1 for substance-level EPS index values.
+
+### B.3.4 Temporal Consistency
+
+EPS uses EU HICP deflator for temporal adjustment:
+- 2015 = 1.000 (base)
+- 2023 = 1.241 (last available; verified against Eurostat)
+- 2024–2100: frozen at 1.241 (no forecast; intentional)
+
+**Check:** Values in 2023–2100 should be identical (deflator frozen).
+
+---
+
+## B.4 Known Limitations
+
+- No country differentiation in base EPS values (uniform globally — Sweden-anchored WTP)
+- Income-based VFT to other countries is described in `VALUE_TRANSFER.md` but not applied within the EPS pipeline itself
+- Noise unit (ELU/W) is not directly comparable to UBA noise (EUR/person/year) without exposure conversion
+- EPS 2015d.1 is not yet updated to reflect post-2015 emission inventory or valuation studies
+
+---
+
+# Part C — UBA Value Factors (`uba-value-factors/`)
+
+**System:** UBA Handbook on Environmental Value Factors, Methodological Convention 4.0
+**Source:** Eser, Matthey, Bünger — German Environment Agency (UBA), December 2025; ISSN 2363-832X
+**Geographic anchor:** Germany (air/transport); global for GHG (GIVE model, Anthoff 2025)
+**Price base:** EUR 2025
+
+---
+
+## C.1 Pre-Execution Validation
+
+Navigate to `uba-value-factors/`:
+
+### C.1.1 Files Present
+
+- [ ] `pipeline.py` — data structures and builder functions
+- [ ] `config.py` — table group configuration and output paths
+- [ ] `extract_uba_values.py` — orchestrator
+- [ ] `tables/` — 10 individual table scripts (`01_ghg.py` through `10_agriculture.py`)
+- [ ] `output/` — directory exists or will be created
+- [ ] Python environment has: `csv`, `openpyxl`, `pathlib`, `logging`
+
+No license file required. Source: public UBA handbook (open access, ISSN 2363-832X).
+
+---
+
+## C.2 Execution Validation
+
+```bash
+cd uba-value-factors/
+python extract_uba_values.py
+# Expected: Done: 10/10 succeeded, 0 failed
+```
+
+### C.2.1 Script Execution Status
+
+| ID | Key | Expected rows | Status |
+|----|-----|---------------|--------|
+| 01 | ghg | 54 | [ ] Pass / [ ] Fail |
+| 02 | air_pollutants | 133 | [ ] Pass / [ ] Fail |
+| 03 | electricity | 45 | [ ] Pass / [ ] Fail |
+| 04 | heat | 45 | [ ] Pass / [ ] Fail |
+| 05 | refrigerants | 16 | [ ] Pass / [ ] Fail |
+| 06 | transport_vehkm | 142 | [ ] Pass / [ ] Fail |
+| 07 | transport_pkm_tkm | 38 | [ ] Pass / [ ] Fail |
+| 08 | noise | 42 | [ ] Pass / [ ] Fail |
+| 09 | nitrogen_phosphorus | 11 | [ ] Pass / [ ] Fail |
+| 10 | agriculture | 20 | [ ] Pass / [ ] Fail |
+| **Total** | | **546** | |
+
+**Execution time expected:** < 5 seconds
+
+---
+
+## C.3 Output File Validation
+
+### C.3.1 Files Generated
+
+Navigate to `uba-value-factors/output/`:
+
+- [ ] 10 × `NN_uba4_KEY.csv` (UTF-8, comma-delimited)
+- [ ] 10 × `NN_uba4_KEY.xlsx` (two sheets: "Value Factors" + "Metadata")
+- [ ] `execution_log_YYYYMMDD_HHMMSS.txt`
+
+### C.3.2 Known-Good Reference Values
+
+Verify these exact values against the UBA MC 4.0 PDF (Table 1 and Table 2):
+
+| Indicator | Substance | Year | PRTP | Value | Unit |
+|-----------|-----------|------|------|-------|------|
+| ghg | CO₂/CO₂-eq | 2025 | 0 % | **990** | EUR 2025/t |
+| ghg | CO₂/CO₂-eq | 2025 | 1 % | **345** | EUR 2025/t |
+| ghg | CH₄ | 2025 | 0 % | **9,220** | EUR 2025/t |
+| ghg | N₂O | 2025 | 0 % | **282,300** | EUR 2025/t |
+| air_pollutants | PM₂.₅ | — | — | **128,200** | EUR 2025/t (health, unknown source) |
+| air_pollutants | NOₓ | — | — | **37,740** | EUR 2025/t (total, unknown source) |
+| transport_vehkm | Car Petrol, all routes | — | 0 % | **30.91** | EUR-cent 2025/veh-km (total) |
+| refrigerants | R-32 | — | 0 % | **670** | EUR 2025/kg |
+
+```python
+# Quick Python verification:
+import pandas as pd
+
+ghg = pd.read_csv("uba-value-factors/output/01_uba4_ghg.csv")
+co2_2025 = ghg.query("substance=='CO2_CO2eq' and emission_year==2025 and prtp_pct==0")["value_factor"].iloc[0]
+assert co2_2025 == 990, f"Reference mismatch: {co2_2025}"
+
+ap = pd.read_csv("uba-value-factors/output/02_uba4_air_pollutants.csv")
+pm25 = ap.query("substance=='PM2.5' and context=='unknown_source' and impact_component=='health'")["value_factor"].iloc[0]
+assert pm25 == 128200, f"Reference mismatch: {pm25}"
+
+print("UBA reference values: OK")
+```
+
+### C.3.3 Sign Convention
+
+All UBA value factors are positive in the CSV (they are costs expressed as positive magnitudes). The sign convention (−1.0 for damages) is applied at the value-transfer step when populating the WifOR `C[y,i,c,s]` matrix. See `VALUE_TRANSFER.md`.
+
+---
+
+## C.4 Known Limitations
+
+- Germany-specific receptor data for air pollutants and transport (EcoSenseWeb v1.3); not valid for other countries without value transfer
+- Agriculture factors are lower bounds: exclude biodiversity, ecosystem services beyond N/P, animal welfare
+- Noise factors cover annoyance and cognitive impairment in children only; exclude sleep disturbance health endpoints
+- GHG series ends at 2050; no UBA projection to 2100 (unlike WifOR and EPS)
+- Single price level (EUR 2025) with no time series deflation within the pipeline
+
+---
+
+# Summary: All Three Systems
+
+| Check | WifOR | EPS (Steen) | UBA MC 4.0 |
+|-------|:-----:|:-----------:|:----------:|
+| Pipeline runs clean (0 failures) | [ ] | [ ] | [ ] |
+| Row / substance counts match expected | [ ] | [ ] | [ ] |
+| Sign convention correct | [ ] | [ ] | [ ] |
+| Reference values verified | [ ] | [ ] | [ ] |
+| Output files present and non-empty | [ ] | [ ] | [ ] |
+| Execution log written | [ ] | [ ] | [ ] |
+
+**Document Version**: 2.0
+**Last Updated**: 2026-03-06
+**Maintained by**: Dr Dimitrij Euler, Greenings
 **Contact**: dimitrij.euler@greenings.org

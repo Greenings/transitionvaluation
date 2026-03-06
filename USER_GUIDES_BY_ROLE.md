@@ -4,6 +4,42 @@
 
 ---
 
+## Which Value Factor System to Use?
+
+The repository contains three independent value factor submodules. Choose based on your use case:
+
+| Use case | Recommended system | Why |
+|----------|--------------------|-----|
+| Corporate impact assessment (CSRD/ESRS), 188-country portfolio analysis | **WifOR** (`value-factors/`) | Country-differentiated, USD output, 8 indicators covering environmental + social |
+| Life-cycle assessment (LCA), substance-level analysis, 892 emissions | **EPS** (`stockholm-value-factors/`) | Broadest substance coverage; LCIA-compatible; ELU/kg per substance |
+| Germany-specific reporting, transport/noise/agriculture externalities, UBA methodology compliance | **UBA** (`uba-value-factors/`) | Official German government values; covers transport, noise, energy, agriculture not in WifOR/EPS |
+| Full multi-system analysis or cross-validation | **All three** | Start with WifOR as primary; supplement with EPS for substances not covered; use UBA for Germany-specific or transport/noise detail |
+
+### Indicator coverage at a glance
+
+| Indicator | WifOR | EPS | UBA |
+|-----------|:-----:|:---:|:---:|
+| GHG (CO₂, CH₄, N₂O) | ✓ | ✓ | ✓ |
+| Air pollutants (PM, NOₓ, SO₂, NH₃) | ✓ | ✓ | ✓ |
+| N/P to water | ✓ | ✓ | ✓ |
+| Land use | ✓ | ✓ | — |
+| Noise | — | ✓ | ✓ |
+| Waste | ✓ | ✓ | — |
+| Heavy metals / toxics | ✓ | ✓ | — |
+| Refrigerants / HFCs | — | ✓ | ✓ |
+| Water consumption | ✓ | — | — |
+| Training / OHS | ✓ | — | — |
+| Fossil resources | — | ✓ | — |
+| VOCs (speciated, 144 substances) | — | ✓ | — |
+| Radionuclides, pesticides, critical minerals | — | ✓ | — |
+| Electricity / heat (per kWh by source) | — | — | ✓ |
+| Transport (per vehicle-km, Pkm, tkm) | — | — | ✓ |
+| Agriculture (per kg product/nutrient) | — | — | ✓ |
+
+For the full value transfer description (how EPS and UBA values can be adapted to 188-country matrices), see **`VALUE_TRANSFER.md`**.
+
+---
+
 ## ⚠️ IMPORTANT: Understanding "Damage or Value to Society"
 
 **Before using these guides, understand what the monetary values represent:**
@@ -286,17 +322,29 @@ Impact valuation methodology research, validation studies, peer review.
 - **ARCHITECTURE_DECISIONS.md**: Design rationale (ADRs)
 - **Impact_Valuation_Sprint_Report_2024_Final-1.md**: Comparison to 10+ other providers
 
+### Three-System Comparison for Researchers
+
+| Dimension | WifOR | EPS 2015d.1 (Steen) | UBA MC 4.0 |
+|-----------|-------|---------------------|-----------|
+| Price base | USD (mixed base years) | EUR 2015 (ELU) | EUR 2025 |
+| Geographic anchor | Global (188 countries, already transferred) | Sweden | Germany (GHG: global) |
+| Country variation | Yes — built in | No — uniform | No — single value set |
+| PRTP scenarios | Single (implicit ~1.5–2 %) | Single (implicit in pathway) | Two (0 % and 1 %) |
+| IAM for GHG | DICE/RICE (Nordhaus 2024) | Pathway sum (not IAM-based) | GIVE (Anthoff 2025) |
+| Air pollutant model | UBA methodology, regional adjustment | EPS pathway (YOLL, crop, materials, NEX) | EcoSenseWeb v1.3 (Germany) |
+| Unique coverage | Water consumption, Training, OHS | 892 substances, fossil resources, pesticides, radionuclides, critical minerals | Transport, electricity/heat, noise, agriculture, refrigerants |
+| Transparency | Excel pre-calculations (gap — see BACKLOG S-VT1) | Published EPS index; pathway derivable | Hard-coded in `pipeline.py`; fully reproducible |
+
 ### Critical Evaluation Criteria
 1. **Comparability**: How does WifOR compare to CE Delft, GIST Impact, Transparent?
-2. **Verifiability**: Can you reproduce coefficients from source data?
-   - **Current limitation**: Excel pre-calculations (see BACKLOG.md S-VT1-VT3)
-3. **Validity**: Do transferred values align with primary studies?
-   - **Example**: Water Pollution PPP adjustment from Ahlroth (2009) Sweden study
-4. **Reliability**: Sensitivity to value transfer parameters?
-   - **Gap**: Elasticity parameters not disclosed (see BACKLOG.md Q8b)
+2. **Cross-validation**: Compare GHG values — UBA GIVE (990 EUR/t, 0 % PRTP) vs WifOR DICE (~200–400 USD/t at ~2 % discount) reflects genuine methodological difference (discount rate + equity weighting), not an error.
+3. **Verifiability**: UBA pipeline is fully reproducible from `pipeline.py` (hard-coded data, open source). EPS pathway derivation follows Steen (2015). WifOR has Excel pre-calculation gaps (see BACKLOG.md S-VT1–VT3).
+4. **Validity**: EPS Sweden anchor and UBA Germany anchor both require income-based VFT for non-OECD countries; see `VALUE_TRANSFER.md` for elasticity parameters used.
+5. **Reliability**: Sensitivity to value transfer parameters is highest for low-income countries; uncertainty ± 50 % is plausible.
 
 ### Collaboration Opportunities
 - Contribute to BACKLOG.md improvement suggestions
 - Participate in IFVI/VBA methodology development
-- Validate against regional primary studies
+- Validate EPS or UBA values against regional primary studies
 - Extend to new indicators (biodiversity, adequate wages, DEI)
+- Implement the value transfer scripts described in `VALUE_TRANSFER.md`

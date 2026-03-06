@@ -30,20 +30,38 @@ This repository represents collaborative work from:
 
 This repository contains multiple components for impact valuation. Please refer to the specific subdirectories for detailed installation instructions:
 
-- **value-factors/** - WifOR Value Factors implementation for calculating environmental and social impact coefficients
-  - 8 sustainability indicators (GHG, Air Pollution, Water, Waste, Land Use, OHS, Training)
-  - 188 countries with country-specific coefficients
-  - Multi-year projections (2014-2030, 2050, 2100)
-  - NACE sector granularity
+### Three value factor systems are available as submodules:
 
-- **stockholm-value-factors/** - EPS 2015d.1 (Environmental Priority Strategies) characterisation factors as transitionvaluation-compatible coefficient matrices
+| Submodule | System | Geographic anchor | Price base | Indicators | Scale |
+|-----------|--------|------------------|------------|------------|-------|
+| `value-factors/` | WifOR | Global (already country-differentiated) | USD (mixed base years) | 8 | 188 countries × NACE |
+| `stockholm-value-factors/` | EPS 2015d.1 (Steen / Sweden) | Sweden (globally applied) | EUR 2015 (ELU) | 12 | 189 countries × 21 NACE, 892 substances |
+| `uba-value-factors/` | UBA MC 4.0 (Germany) | Germany (GHG: global) | EUR 2025 | 10 | 546 rows; Germany-specific |
+
+- **value-factors/** — WifOR Value Factors: environmental and social damage costs, country-differentiated
+  - 8 indicators: GHG, Air Pollution, Water Consumption, Land Use, Water Pollution, Waste, OHS, Training
+  - 188 countries with income- and population-adjusted coefficients; NACE A21 sectors
+  - Multi-year projections (2014–2030, 2050, 2100); USD output via USA GDP deflator
+  - License: Apache 2.0 (accept via `.license_accepted`)
+  - Maintainer: WifOR Institute (wifor-impactanalysis/WifOR-Value-Factors)
+
+- **stockholm-value-factors/** — EPS 2015d.1 characterisation factors (Steen, Chalmers University)
   - 12 LCIA impact categories: inorganic gases, particles, VOC, halogenated organics, emissions to water, pesticides, noise, radionuclides, land use, fossil resources, other elements, waste
   - 892 substances covering all major emission flows to air, water, and soil
-  - 189 countries × 21 NACE sectors, EU HICP deflator-adjusted, years 2014–2100
-  - Source: Steen (2015), Swedish Life Cycle Center, Chalmers University of Technology
-  - Maintainer: Dr Dimitrij Euler, Greenings (dimitrij.euler@greenings.org)
+  - 189 countries × 21 NACE sectors; EU HICP deflator-adjusted; years 2014–2100
+  - Globally applied from Swedish anchor; all signs negative (damages); ELU ≈ EUR
+  - Maintainer: Dr Dimitrij Euler, Greenings (d1mitrij/Stockholm_ValueFactors)
 
-Each component has its own setup requirements and documentation. Navigate to the relevant subdirectory and consult its README.md for specific installation steps.
+- **uba-value-factors/** — UBA Handbook on Environmental Value Factors, MC 4.0 (December 2025)
+  - 10 table groups: GHG, air pollutants, electricity, heat, refrigerants, transport (veh-km + Pkm/tkm), noise, nitrogen/phosphorus, agriculture
+  - 546 rows; Germany-specific for air/transport; global for GHG (GIVE model, Anthoff 2025)
+  - Two PRTP scenarios (0 % and 1 %) for GHG-derived indicators; EUR 2025 price base
+  - Source: Eser, Matthey, Bünger — German Environment Agency (UBA), December 2025; ISSN 2363-832X
+  - Maintainer: Dr Dimitrij Euler, Greenings (d1mitrij/UBA_ValueFactors, branch `dima`)
+
+Each submodule has its own setup requirements and documentation. Navigate to the relevant subdirectory and consult its README.md for specific installation steps.
+
+**Value transfer across systems:** See `VALUE_TRANSFER.md` in this repository for a full description of how each indicator from EPS (Sweden anchor) and UBA (Germany anchor) can be transferred to the 188-country WifOR coefficient matrix, covering same, similar, and unique indicators across the three systems.
 
 ### Core Documentation in This Repository
 
@@ -289,18 +307,25 @@ For specific component questions, please refer to the documentation in the relev
 ## Repository Contents
 
 ```
-tvp1/
+transitionvaluation/
 ├── README.md                                           # This file
-├── value-factors/                                      # WifOR Value Factors (submodule: wifor-impactanalysis/WifOR-Value-Factors)
-├── stockholm-value-factors/                            # EPS 2015d.1 LCIA factors (submodule: d1mitrij/Stockholm_ValueFactors)
+├── VALUE_TRANSFER.md                                   # Cross-system value transfer guide (WifOR / EPS / UBA)
+│
+├── Value Factor Submodules/
+│   ├── value-factors/                                  # WifOR Value Factors (wifor-impactanalysis/WifOR-Value-Factors)
+│   │     8 indicators · 188 countries · USD · Apache 2.0
+│   ├── stockholm-value-factors/                        # EPS 2015d.1 (d1mitrij/Stockholm_ValueFactors)
+│   │     12 categories · 892 substances · EUR 2015 (ELU) · Sweden anchor
+│   └── uba-value-factors/                              # UBA MC 4.0 (d1mitrij/UBA_ValueFactors, branch dima)
+│         10 table groups · 546 rows · EUR 2025 · Germany anchor
 │
 ├── Core Documentation/
-│   ├── METHODOLOGY.md                                  # Calculation methodology
+│   ├── METHODOLOGY.md                                  # Calculation methodology (WifOR-focused; see submodule docs for EPS/UBA)
 │   ├── ARCHITECTURE_DECISIONS.md                       # Design rationale
-│   ├── INPUT_FILES_METHODOLOGY.md                      # Data sources
-│   ├── USABILITY_INTEGRATION_RECOMMENDATIONS.md        # User experience framework
+│   ├── INPUT_FILES_METHODOLOGY.md                      # Data sources and methodological origins
 │   ├── DATA_UPDATES.md                                 # Maintenance procedures
-│   ├── VALIDATION_REPORT.md                            # Quality assurance
+│   ├── VALIDATION_REPORT.md                            # Quality assurance (all three systems)
+│   ├── ALGORITHMS_VISUAL.md                            # Pipeline flowcharts
 │   └── TROUBLESHOOTING.md                              # Common issues
 │
 ├── Reports and Research/
@@ -310,5 +335,6 @@ tvp1/
 │
 └── Project Management/
     ├── BACKLOG.md                                      # Development roadmap
-    └── DOCUMENTATION_UPDATE_RECOMMENDATIONS.md         # Documentation strategy
+    ├── CONTRIBUTING_OPPORTUNITIES.md                   # Contribution guidance
+    └── USER_GUIDES_BY_ROLE.md                          # Role-specific guidance
 ```

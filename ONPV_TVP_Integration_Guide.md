@@ -8,7 +8,7 @@ This document maps the four ONPV differentiation steps to the existing Transitio
 
 | ONPV Step | TVP Coverage | Integration Status |
 |:---|:---|:---|
-| **Step 1: Value Factors** | Fully covered by `value-factors/` scripts | **Strong** - Direct integration |
+| **Step 1: Value Factors** | Covered by all three submodules (`value-factors/`, `stockholm-value-factors/`, `uba-value-factors/`) | **Strong** - Direct integration; see system-selection guide |
 | **Step 2: Exposure Factors** | Partially covered (sector/country structure) | **Medium** - Extension needed |
 | **Step 3: Vulnerability Factors** | Not covered | **Gap** - New module required |
 | **Step 4: Attribution Factors** | Not covered | **Gap** - New module required |
@@ -17,50 +17,81 @@ This document maps the four ONPV differentiation steps to the existing Transitio
 
 ## 2. Step 1: Value Factors - Full Integration
 
-### TVP Assets Available
+### TVP Assets Available — Three Submodules for Step 1
 
-The `value-factors/` folder provides complete infrastructure for Step 1:
+TVP now provides three complementary value factor systems for Step 1. Use `VALUE_TRANSFER.md` to decide which system to use per indicator, and to transfer EPS/UBA values to the 188-country matrix format when needed.
+
+#### Primary: WifOR (`value-factors/`) — 8 indicators, 188 countries, country-differentiated
 
 | TVP Component | ONPV Use | Location |
 |:---|:---|:---|
-| GHG Emissions coefficients | Social Cost of Carbon | `020_241024_prepare_GHG_my.py` |
-| Air Pollution coefficients | PM2.5, NOx, SO2, etc. | `008_241001_prepare_AirPollution_my.py` |
+| GHG Emissions coefficients | Social Cost of Carbon (DICE/RICE, Nordhaus 2024) | `020_241024_prepare_GHG_my.py` |
+| Air Pollution coefficients | PM2.5, NOx, SO2, NH₃, NMVOC (UBA method, country-adjusted) | `008_241001_prepare_AirPollution_my.py` |
 | Water Consumption | AWARE-based scarcity costs | `009_241001_prepare_WaterConsumption_my.py` |
-| Water Pollution | N, P, heavy metals | `013_241014_prepare_WaterPol_my.py` |
-| Waste Management | Hazardous/non-hazardous | `007_241001_prepare_Waste_my.py` |
-| Land Use | EPS-based ecosystem costs | `010_241001_prepare_LandUse_my.py` |
-| OHS | DALY-based injury costs | `015_241016_prepare_OHS_my.py` |
-| Training | Positive human capital | `014_241016_prepare_Training_my.py` |
+| Water Pollution | N, P, heavy metals (USEtox + Steen 2020) | `013_241014_prepare_WaterPol_my.py` |
+| Waste Management | Hazardous/non-hazardous (IPCC + EXIOPOL) | `007_241001_prepare_Waste_my.py` |
+| Land Use | EPS/LANCA ecosystem costs | `010_241001_prepare_LandUse_my.py` |
+| OHS | DALY-based injury/fatality costs (GBD, VSL) | `015_241016_prepare_OHS_my.py` |
+| Training | Positive human capital (returns to education) | `014_241016_prepare_Training_my.py` |
+
+#### Supplementary: EPS (`stockholm-value-factors/`) — 892 substances, Sweden-anchored, globally applied
+
+| TVP Component | ONPV Use | Notes |
+|:---|:---|:---|
+| 001 Inorganic gases | GHG + criteria air pollutants at substance level | ELU/kg; Sweden income anchor; globally uniform |
+| 002 Particles | PM speciation + metal content | Includes As, Cd, Cr, Cu, Pb, Zn in particulate form |
+| 003–004 VOCs + Halogenated | Organic emissions, CFCs, HFCs | 427 substances not in WifOR |
+| 005 Emissions to water | N, P, heavy metals to water | Cross-validate against WifOR Water Pollution |
+| 006 Pesticides | 302 active substances | No WifOR / UBA equivalent |
+| 007 Noise | Road traffic noise in ELU/W | Convert to per-person-year for ONPV |
+| 008 Radionuclides | Nuclear pathway assessment | No WifOR / UBA equivalent |
+| 009 Land use | 23 land categories in ELU/m²·yr | Cross-validate against WifOR Land Use |
+| 010 Fossil resources | Oil, coal, lignite, gas depletion | No WifOR / UBA equivalent |
+| 011 Other elements | 77 critical minerals and rare earths | No WifOR / UBA equivalent |
+| 012 Waste (litter) | Plastic litter to ground/water | Supplement to WifOR Waste |
+
+#### Supplementary: UBA MC 4.0 (`uba-value-factors/`) — 10 table groups, Germany-specific
+
+| TVP Component | ONPV Use | Notes |
+|:---|:---|:---|
+| 01 GHG | Social cost CO₂/CH₄/N₂O (GIVE, 2020–2050) | Cross-validate against WifOR GHG; higher (0 % PRTP) |
+| 02 Air pollutants | PM₂.₅, NOₓ, SO₂, NH₃ (EcoSenseWeb, Germany) | Three context tiers (unknown / stationary / road traffic) |
+| 03–04 Electricity / Heat | Life-cycle damage per kWh by source | No WifOR / EPS equivalent; use for energy-intensive sectors |
+| 05 Refrigerants | GWP100 × CO₂ VF per kg refrigerant | Supplement EPS 004 (climate component only in UBA) |
+| 06–07 Transport | Per vehicle-km and per Pkm/tkm | No WifOR / EPS equivalent; 5-component breakdown |
+| 08 Noise | Annoyance + cognitive impairment; by dB(A) class | Cross-validate against EPS 007 (different unit) |
+| 09 N/P | N/P to air and water; limiting-substance approach | Cross-validate against WifOR Water Pollution |
+| 10 Agriculture | Per kg product / per kg nutrient surplus | No WifOR / EPS equivalent; lower bounds only |
 
 ### Integration Recommendation
-
-**Direct Usage:** The Step 1 methodology documents should reference TVP value-factors directly:
 
 ```
 Step1_Value_Factors_Methodology.md
           │
-          ▼
-value-factors/
-├── output/GHG.h5           → GHG coefficients (DICE 2023)
-├── output/AirPollution.h5  → Air pollution (UBA methodology)
-├── output/WaterConsumption.h5
-├── output/WaterPollution.h5
-├── output/Waste.h5
-├── output/LandUse.h5
-├── output/OHS.h5
-└── output/Training.h5
+          ├─ value-factors/output/          → WifOR (primary; 188-country matrix, USD)
+          │    GHG.h5, AirPollution.h5, WaterConsumption.h5,
+          │    WaterPollution.h5, Waste.h5, LandUse.h5, OHS.h5, Training.h5
+          │
+          ├─ stockholm-value-factors/output/ → EPS (supplement; 892 substances, ELU)
+          │    001_eps_inorganic_gases.h5 … 012_eps_waste.h5
+          │
+          └─ uba-value-factors/output/      → UBA (supplement; Germany-specific, EUR 2025)
+               01_uba4_ghg.csv … 10_uba4_agriculture.csv
 ```
+
+See `VALUE_TRANSFER.md` for precedence rules and formulas to convert EPS and UBA values into the 188-country USD coefficient matrix when needed.
 
 ### Key Parameters from TVP
 
-| Parameter | TVP Value | Source |
-|:---|:---|:---|
-| Social Discount Rate | 1.5% | WifOR methodology |
-| VSL per DALY | $200,000 | Global estimate |
-| Base Year | 2020 USD | Inflation-adjusted |
-| Country Coverage | 188 countries | Model definitions |
-| Sector Coverage | NACE classification | Model definitions |
-| Year Range | 2014-2030, 2050, 2100 | Projection |
+| Parameter | WifOR | EPS (Steen) | UBA MC 4.0 |
+|:---|:---|:---|:---|
+| Social discount rate | ~1.5 % (implicit) | implicit in pathway | 0 % or 1 % PRTP (explicit) |
+| GHG model | DICE/RICE (Nordhaus 2024) | Pathway sum | GIVE (Anthoff 2025) |
+| VSL / DALY basis | $200,000 global | 50,000 ELU/person-year (Sweden) | German YOLL via EcoSenseWeb |
+| Price base | 2020 USD | EUR 2015 | EUR 2025 |
+| Country coverage | 188 | 189 (uniform) | 1 (Germany); GHG: global |
+| Sector coverage | NACE A21 | NACE A21 | None (single values) |
+| Year range | 2014–2030, 2050, 2100 | 2014–2030, 2050, 2100 | 2025 (GHG: 2020–2050) |
 
 ### Update Step 1 Document
 
@@ -331,12 +362,23 @@ After integration, the TVP repository would be structured as:
 transitionvaluation/
 ├── README.md                         # Updated with ONPV overview
 ├── METHODOLOGY.md                    # Existing (Step 1 focus)
+├── VALUE_TRANSFER.md                 # Cross-system value transfer guide
 ├── ONPV_METHODOLOGY.md               # NEW: Full 4-step methodology
 │
-├── value-factors/                    # STEP 1: Existing
+├── value-factors/                    # STEP 1: WifOR (primary; 188 countries, USD)
 │   ├── scripts (8)
 │   ├── output/
 │   └── input_data/
+│
+├── stockholm-value-factors/          # STEP 1: EPS/Steen (supplement; 892 substances, ELU)
+│   ├── indicators/ (12 scripts)
+│   ├── output/
+│   └── data/
+│
+├── uba-value-factors/                # STEP 1: UBA MC 4.0 (supplement; Germany, EUR 2025)
+│   ├── tables/ (10 scripts)
+│   ├── output/
+│   └── pipeline.py
 │
 ├── exposure-factors/                 # STEP 2: NEW
 │   ├── scripts
