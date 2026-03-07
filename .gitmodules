@@ -1,3 +1,7 @@
 [submodule "value-factors"]
 	path = value-factors
 	url = https://github.com/wifor-impactanalysis/WifOR-Value-Factors.git
+[submodule "eqaly-value-factors"]
+	path = eqaly-value-factors
+	url = https://github.com/d1mitrij/ValuingImpact_vf.git
+	branch = dima
