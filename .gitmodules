@@ -8,3 +8,15 @@
 	path = uba-value-factors
 	url = https://github.com/d1mitrij/UBA_ValueFactors.git
 	branch = dima
+[submodule "uk-value-factors"]
+	path = uk-value-factors
+	url = https://github.com/d1mitrij/greenbook_vf.git
+	branch = dima
+[submodule "cedelft-value-factors"]
+	path = cedelft-value-factors
+	url = https://github.com/d1mitrij/cedelft_vf.git
+	branch = dima
+[submodule "valuingimpact-value-factors"]
+	path = valuingimpact-value-factors
+	url = https://github.com/d1mitrij/ValuingImpact_vf.git
+	branch = dima
