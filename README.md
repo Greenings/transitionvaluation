@@ -30,13 +30,16 @@ This repository represents collaborative work from:
 
 This repository contains multiple components for impact valuation. Please refer to the specific subdirectories for detailed installation instructions:
 
-### Three value factor systems are available as submodules:
+### Six value factor systems are available as submodules:
 
 | Submodule | System | Geographic anchor | Price base | Indicators | Scale |
 |-----------|--------|------------------|------------|------------|-------|
 | `value-factors/` | WifOR | Global (already country-differentiated) | USD (mixed base years) | 8 | 188 countries × NACE |
 | `stockholm-value-factors/` | EPS 2015d.1 (Steen / Sweden) | Sweden (globally applied) | EUR 2015 (ELU) | 12 | 189 countries × 21 NACE, 892 substances |
 | `uba-value-factors/` | UBA MC 4.0 (Germany) | Germany (GHG: global) | EUR 2025 | 10 | 546 rows; Germany-specific |
+| `cedelft-value-factors/` | CE Delft Env. Prices 2024 (EU27) | EU27 (no country variation) | EUR 2021 | 6 table groups | 114 rows; EU27 average |
+| `uk-value-factors/` | UK Wellbeing & Health (HM Treasury) | United Kingdom | GBP (2019/2024) | 5 table groups | 72 rows; UK-specific |
+| `valuingimpact-value-factors/` | eQALY (Valuing Impact) | Global (188 countries, country-varying) | USD 2023 | 6 | 188 countries × 21 NACE |
 
 - **value-factors/** — WifOR Value Factors: environmental and social damage costs, country-differentiated
   - 8 indicators: GHG, Air Pollution, Water Consumption, Land Use, Water Pollution, Waste, OHS, Training
@@ -59,9 +62,30 @@ This repository contains multiple components for impact valuation. Please refer 
   - Source: Eser, Matthey, Bünger — German Environment Agency (UBA), December 2025; ISSN 2363-832X
   - Maintainer: Dr Dimitrij Euler, Greenings (d1mitrij/UBA_ValueFactors, branch `dima`)
 
+- **cedelft-value-factors/** — CE Delft Environmental Prices Handbook 2024: EU27 version
+  - 6 table groups: air pollutants (20), water pollutants (44), soil pollutants (21), land use (1), ReCiPe 2016 midpoints (19), PEF CAT I/II midpoints (9)
+  - 114 rows; lower/central/upper uncertainty variants; EUR 2021 price level
+  - Derivation: Impact Pathway Approach (IPA) with EEA/GAINS dispersion + ReCiPe 2016 H; no value transfer (direct EU27 average)
+  - Source: De Vries et al., CE Delft, April 2025 (Version 1.1, Reference 230107)
+  - Maintainer: Dr Dimitrij Euler, Greenings (d1mitrij/cedelft_vf, branch `dima`)
+
+- **uk-value-factors/** — UK Wellbeing & Health Value Factors (HM Treasury / DCMS)
+  - 5 table groups: WELLBY/QALY unit values (19), discount rates (8), cultural engagement health benefits per person (15), societal totals (13), workplace wellbeing parameters (17)
+  - 72 rows; GBP 2019 / GBP 2024 price levels; UK-specific
+  - Value transfer: WELLBY uprating via income elasticity (GDP/capita^1.3); geographic transfer via OECD (2025) guidance
+  - Sources: HM Treasury Green Book 2026; Wellbeing Guidance 2021; OECD 2025; Frontier Economics / DCMS 2024
+  - Maintainer: Dr Dimitrij Euler, Greenings (d1mitrij/greenbook_vf, branch `dima`)
+
+- **valuingimpact-value-factors/** — eQALY Impact Valuation Method (Valuing Impact, 2025)
+  - 6 indicators: HUI (health utility of income), HUT (health utility of taxes), wages (low/medium/high skill), health DALY rates (16 risk factors), NatCap pollution (16 LCA midpoints), NatCap land use (LANCA v2.0)
+  - 188 countries × 21 NACE sectors; USD 2023 price base; HDF5 + Excel output
+  - Value transfer: country-specific welfare adjustment via HUI and HUT multipliers (endogenous VT); LANCA v2.0 country-specific land values
+  - Sources: IHME GBD 2019; ILO; World Bank; CE Delft; LANCA v2.0; OECD; IMF
+  - Maintainer: Dr Dimitrij Euler, Greenings (d1mitrij/ValuingImpact_vf, branch `dima`)
+
 Each submodule has its own setup requirements and documentation. Navigate to the relevant subdirectory and consult its README.md for specific installation steps.
 
-**Value transfer across systems:** See `VALUE_TRANSFER.md` in this repository for a full description of how each indicator from EPS (Sweden anchor) and UBA (Germany anchor) can be transferred to the 188-country WifOR coefficient matrix, covering same, similar, and unique indicators across the three systems.
+**Value transfer across systems:** See `VALUE_TRANSFER.md` in this repository for a full description of how each indicator from EPS (Sweden anchor), UBA (Germany anchor), CE Delft (EU27 anchor), UK (GBP), and eQALY (188 countries, country-varying) can be integrated into the common WifOR coefficient matrix, covering same, similar, and unique indicators across all six systems.
 
 ### Core Documentation in This Repository
 
@@ -316,8 +340,14 @@ transitionvaluation/
 │   │     8 indicators · 188 countries · USD · Apache 2.0
 │   ├── stockholm-value-factors/                        # EPS 2015d.1 (d1mitrij/Stockholm_ValueFactors)
 │   │     12 categories · 892 substances · EUR 2015 (ELU) · Sweden anchor
-│   └── uba-value-factors/                              # UBA MC 4.0 (d1mitrij/UBA_ValueFactors, branch dima)
-│         10 table groups · 546 rows · EUR 2025 · Germany anchor
+│   ├── uba-value-factors/                              # UBA MC 4.0 (d1mitrij/UBA_ValueFactors, branch dima)
+│   │     10 table groups · 546 rows · EUR 2025 · Germany anchor
+│   ├── cedelft-value-factors/                          # CE Delft Env. Prices 2024 (d1mitrij/cedelft_vf, branch dima)
+│   │     6 table groups · 114 rows · EUR 2021 · EU27 anchor · IPA direct derivation
+│   ├── uk-value-factors/                               # UK Wellbeing & Health (d1mitrij/greenbook_vf, branch dima)
+│   │     5 table groups · 72 rows · GBP 2019/2024 · UK anchor · WELLBY/QALY
+│   └── valuingimpact-value-factors/                    # eQALY (d1mitrij/ValuingImpact_vf, branch dima)
+│         6 indicators · 188 countries × 21 NACE · USD 2023 · HUI/HUT welfare VT
 │
 ├── Core Documentation/
 │   ├── METHODOLOGY.md                                  # Calculation methodology (WifOR-focused; see submodule docs for EPS/UBA)

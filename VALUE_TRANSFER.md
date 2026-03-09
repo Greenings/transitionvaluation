@@ -1,22 +1,25 @@
-# Value Transfer Description — WifOR, EPS (Steen) and UBA Value Factor Sets
+# Value Transfer Description — WifOR, EPS, UBA, CE Delft, UK and eQALY Value Factor Sets
 
-**Transitionvaluation Framework | Greenings | Updated 2026-03-05**
+**Transitionvaluation Framework | Greenings | Updated 2026-03-09**
 
 ---
 
 ## 1. Overview
 
-This document describes how the three value factor sets in the transitionvaluation
+This document describes how the six value factor sets in the transitionvaluation
 framework can be integrated into the common WifOR coefficient matrix
 `C[year, indicator, country, sector]` covering 188 countries and 21 NACE sectors.
 
-### The three systems
+### The six systems
 
 | System | Folder | Geographic anchor | Price base | Indicators | Rows/substances |
 |--------|--------|------------------|------------|------------|-----------------|
 | **WifOR** | `value-factors/` | Global (188 countries, already differentiated) | USD (mixed base years) | 8 | 8 categories |
 | **EPS 2015d.1** (Steen) | `stockholm-value-factors/` | Sweden (globally applied) | EUR 2015 (ELU ≈ EUR) | 12 | 892 substances |
 | **UBA MC 4.0** | `uba-value-factors/` | Germany (GHG: global via GIVE) | EUR 2025 | 10 | 546 rows |
+| **CE Delft 2024** | `cedelft-value-factors/` | EU27 (no country variation) | EUR 2021 | 6 table groups | 114 rows |
+| **UK Wellbeing** | `uk-value-factors/` | United Kingdom | GBP 2019/2024 | 5 table groups | 72 rows |
+| **eQALY** (Valuing Impact) | `valuingimpact-value-factors/` | Global (188 countries, country-varying) | USD 2023 | 6 | 188 × 21 NACE |
 
 ### General coefficient formula (WifOR convention)
 
@@ -58,26 +61,40 @@ Anchors:
 
 ---
 
-## 2. Indicator Map — Coverage Across the Three Systems
+## 2. Indicator Map — Coverage Across All Six Systems
 
-| Indicator | WifOR | EPS (Steen) | UBA MC 4.0 | Section |
-|-----------|:-----:|:-----------:|:----------:|---------|
-| **SAME — all three systems** | | | | |
-| Greenhouse gases (CO₂, CH₄, N₂O) | ✓ | ✓ | ✓ | 3.1 |
-| Air pollutants (PM, NOₓ, SO₂, NH₃, NMVOC) | ✓ | ✓ | ✓ | 3.2 |
-| Nitrogen & phosphorus to water | ✓ | ✓ | ✓ | 3.3 |
-| **SIMILAR — two of three systems** | | | | |
-| Land use / habitat conversion | ✓ | ✓ | — | 4.1 |
-| Noise | — | ✓ | ✓ | 4.2 |
-| Waste | ✓ | ✓ | — | 4.3 |
-| Heavy metals & toxics to air/water | ✓ | ✓ | — | 4.4 |
-| Halogenated compounds / refrigerants | — | ✓ (004) | ✓ (05) | 4.5 |
-| **DIFFERENT — unique to one system** | | | | |
-| Water consumption (blue water) | ✓ | — | — | 5.1 |
-| Training / human capital | ✓ | — | — | 5.2 |
-| Occupational health & safety (OHS) | ✓ | — | — | 5.3 |
-| Fossil resources depletion | — | ✓ (010) | — | 5.4 |
-| VOCs — detailed speciation (144 substances) | — | ✓ (003) | — | 5.5 |
+| Indicator | WifOR | EPS | UBA | CE Delft | UK | eQALY | Section |
+|-----------|:-----:|:---:|:---:|:--------:|:--:|:-----:|---------|
+| **SAME — environmental damage (≥3 systems)** | | | | | | | |
+| Greenhouse gases (CO₂, CH₄, N₂O) | ✓ | ✓ | ✓ | ✓ | — | ✓ (NatCap) | 3.1 |
+| Air pollutants (PM, NOₓ, SO₂, NH₃, NMVOC) | ✓ | ✓ | ✓ | ✓ | — | ✓ (NatCap) | 3.2 |
+| Nitrogen & phosphorus to water | ✓ | ✓ | ✓ | ✓ (N/P) | — | ✓ (NatCap) | 3.3 |
+| **SIMILAR — two or more systems** | | | | | | | |
+| Land use / habitat conversion | ✓ | ✓ | — | ✓ (T6) | — | ✓ (LANCA) | 4.1 |
+| Noise | — | ✓ | ✓ | — | — | — | 4.2 |
+| Waste | ✓ | ✓ | — | — | — | — | 4.3 |
+| Heavy metals & toxics to air/water/soil | ✓ | ✓ | — | ✓ (T3–5) | — | — | 4.4 |
+| Halogenated compounds / refrigerants | — | ✓ (004) | ✓ (05) | ✓ (T3, CFC-11) | — | — | 4.5 |
+| Human health — income / welfare | — | — | — | — | ✓ (WELLBY) | ✓ (HUI/wages) | 4.6 |
+| **DIFFERENT — unique to one or two systems** | | | | | | | |
+| Water consumption (blue water) | ✓ | — | — | — | — | ✓ (NatCap) | 5.1 |
+| Training / human capital | ✓ | — | — | — | — | ✓ (wages) | 5.2 |
+| Occupational health & safety (OHS) | ✓ | — | — | — | — | ✓ (DALY) | 5.3 |
+| Fossil resources depletion | — | ✓ (010) | — | ✓ (T7, fossil ADP) | — | — | 5.4 |
+| VOCs — detailed speciation (144 substances) | — | ✓ (003) | — | — | — | — | 5.5 |
+| Radionuclides | — | ✓ (008) | — | ✓ (T7, ion. rad.) | — | — | 5.6 |
+| Pesticides | — | ✓ (006) | — | — | — | — | 5.7 |
+| Critical minerals / other elements | — | ✓ (011) | — | ✓ (T7, minerals ADP) | — | — | 5.8 |
+| Electricity (life-cycle per kWh by source) | — | — | ✓ | — | — | — | 5.9 |
+| Heat (life-cycle per kWh by source) | — | — | ✓ | — | — | — | 5.10 |
+| Transport (vehicle-km; Pkm/tkm) | — | — | ✓ | — | — | — | 5.11 |
+| Agriculture | — | — | ✓ | — | — | — | 5.12 |
+| WELLBY / QALY unit value | — | — | — | — | ✓ | — | 5.13 |
+| Discount rates (STPR) | — | — | — | — | ✓ | — | 5.14 |
+| Cultural engagement health benefits | — | — | — | — | ✓ | — | 5.15 |
+| Health DALY rates (WASH, OHS, diet) | — | — | — | — | — | ✓ | 5.16 |
+| HUI — health utility of income | — | — | — | — | — | ✓ | 5.17 |
+| HUT — health utility of taxes | — | — | — | — | — | ✓ | 5.18 |
 | Radionuclides | — | ✓ (008) | — | 5.6 |
 | Pesticides | — | ✓ (006) | — | 5.7 |
 | Critical minerals & other elements | — | ✓ (011) | — | 5.8 |
@@ -704,30 +721,144 @@ AWARE water scarcity and income elasticity.
 
 ---
 
+---
+
+## 5.13–5.18 New Systems: CE Delft, UK Wellbeing, eQALY
+
+### 5.13 WELLBY / QALY Unit Value — UK only
+
+**UK script:** `01_wellby_valuations` | Unit: GBP 2019/WELLBY or GBP 2019/QALY
+
+| Value | Central | Derivation |
+|---|---|---|
+| WELLBY | £13,000 | Midpoint of QALY-anchor (£10k) and income-anchor (£16k) |
+| QALY (Green Book) | £70,000 | HM Treasury welfare appraisal standard |
+| QALY (NICE HTA) | £20,000–£30,000 | Healthcare sector benchmark |
+
+**Temporal transfer** (GBP 2019 → year t):
+```
+WELLBY(t) = £13,000 × [GDP_deflator(t)/GDP_deflator(2019)] × [GDPpc(t)/GDPpc(2019)]^1.3
+```
+
+**Geographic transfer** (UK → other countries, OECD 2025 guidance):
+```
+WELLBY_country = £13,000 × (GDPpc_PPP_country / GDPpc_PPP_UK)^ε   ε ≈ 1.0–1.3
+```
+Convert GBP → USD: apply GBP/USD exchange rate for target year.
+
+---
+
+### 5.14–5.15 Discount Rates and Cultural Engagement — UK only
+
+Discount rates (STPR 3.5%; health rate 1.5%) are parameters for discounting
+welfare streams — they do not require value transfer but should be noted when
+comparing with other systems that apply different discount conventions (UBA: 2.25%;
+EPS: EU HICP, no time discounting of damage factors).
+
+Cultural engagement health benefits (£122–£1,310 GBP 2024/person/year) are
+UK-specific estimates derived from UK survey data. Geographic transfer to
+other countries requires:
+1. Replace QALY/WELLBY value with country-adjusted equivalent (see 5.13)
+2. Apply cultural participation rate from national surveys as the exposure modifier
+
+---
+
+### 5.16 Health DALY Rates — eQALY only
+
+**eQALY script:** `04_health_daly` | Unit: USD/capita | 16 risk factors | 188 countries
+
+DALY rates from IHME GBD 2019 (country × risk factor) are monetised at
+59,446 USD/DALY (OECD GDP/capita 2023 PPP). The result is directly country-specific
+— no transfer needed. Years are adjusted via the IMF world deflator I[y].
+
+**Relation to WifOR OHS:** Both cover health damage via DALYs. WifOR OHS targets
+occupational incidents (GBD occupational risks); eQALY health_daly covers WASH,
+dietary, and occupational risks more broadly. They should not be double-counted.
+
+---
+
+### 5.17 HUI — Health Utility of Income — eQALY only
+
+**eQALY script:** `01_hui` | Unit: USD/USD | 188 countries
+
+HUI is an endogenous value transfer factor — it converts a monetary income impact
+into its societal welfare equivalent. It is applied within the eQALY model itself:
+
+```
+Societal_value = Income_USD × HUI[country]
+```
+
+For integration into the WifOR coefficient matrix, HUI acts as a country-specific
+multiplier on any income-generating indicator (e.g. training, wages). It is not a
+standalone damage indicator but a transfer coefficient.
+
+---
+
+### 5.18 HUT — Health Utility of Taxes — eQALY only
+
+**eQALY script:** `02_hut` | Unit: USD/USD | 188 countries
+
+HUT is the Social Return on Investment of public spending. Applied analogously to HUI:
+
+```
+Societal_value_tax = Revenue_USD × HUT[country]
+```
+
+For land-use ecosystem services: the global average HUT (0.7581) scales physical
+ecosystem values (LANCA USD/ha) to their societal welfare equivalent.
+
+---
+
+### CE Delft integration into the 188-country matrix
+
+CE Delft provides direct EU27 values (no country variation). For integration:
+
+```
+D[pollutant, country] = D[pollutant, EU27]
+                          × (GDPpc_PPP[country] / GDPpc_PPP[EU27_avg])^ε
+                          × EUR_USD[2021]
+
+EU27 GDP/capita PPP 2021 ≈ 38,000 USD
+Income elasticity ε: 0.8–1.0 (health); 0.4–0.6 (ecosystem); 0.0 (resource)
+```
+
+For the LCA midpoint prices (Tables 7–8, ReCiPe 2016 / PEF), characterisation
+factors are substance- and method-specific — no country transfer applies to the
+characterisation factors, only to the endpoint monetary values.
+
+---
+
 ## 6. Summary: Value Transfer by Indicator
 
-| # | Indicator | WifOR | EPS | UBA | Transfer method | Country variation | ε |
-|---|-----------|:-----:|:---:|:---:|-----------------|-------------------|---|
-| 3.1 | GHG (CO₂, CH₄, N₂O) | ✓ | ✓ | ✓ | UVT (climate damage global) | None | — |
-| 3.2 | Air pollutants (PM, NOₓ, SO₂, NH₃, NMVOC) | ✓ | ✓ | ✓ | VFT + PT | Income + pop. density | 0.8–1.0 (health) |
-| 3.3 | Nitrogen & phosphorus to water | ✓ | ✓ | ✓ | PT + VFT | AWARE + income | 0.4–0.6 (eco) |
-| 4.1 | Land use | ✓ | ✓ | — | VFT (from WifOR primary) | Income | 0.4–0.6 |
-| 4.2 | Noise | — | ✓ | ✓ | VFT | Income | 0.8 |
-| 4.3 | Waste | ✓ | ✓ | — | VFT (from WifOR primary) | Income | 0.4–0.6 |
-| 4.4 | Heavy metals & toxics | ✓ | ✓ | — | VFT + PT | Income + pop. density | 0.8–1.0 (health) |
-| 4.5 | Halogenated / refrigerants | — | ✓ | ✓ | UVT (climate share); VFT (ozone + toxicity share) | None (climate); income (other) | 0.8–1.0 |
-| 5.1 | Water consumption | ✓ | — | — | Already country-specific | — | — |
-| 5.2 | Training | ✓ | — | — | Already country-specific | — | — |
-| 5.3 | OHS | ✓ | — | — | Already country-specific | — | — |
-| 5.4 | Fossil resources | — | ✓ | — | VFT (from SWE) | Income | 0.5–0.8 |
-| 5.5 | VOCs (detailed) | — | ✓ | — | VFT + PT (from SWE) | Income + pop. density | 0.8–1.0 |
-| 5.6 | Radionuclides | — | ✓ | — | VFT (from SWE) | Income | 0.8–1.0 |
-| 5.7 | Pesticides | — | ✓ | — | VFT (from SWE) | Income | 0.4–0.6 |
-| 5.8 | Critical minerals | — | ✓ | — | UVT (resource; globally uniform) | None | — |
-| 5.9 | Electricity (per kWh by source) | — | — | ✓ | PT (energy mix) + VFT (AP component) | Country mix + income | 0.8–1.0 |
-| 5.10 | Heat (per kWh by source) | — | — | ✓ | PT (heating mix) + VFT (AP component) | Country mix + income | 0.8–1.0 |
-| 5.11 | Transport (vehicle-km; Pkm/tkm) | — | — | ✓ | Component-wise VFT + PT | Per component | 0.8–1.0 |
-| 5.12 | Agriculture | — | — | ✓ | Component reconstruction from 3.1 + 3.2 + 3.3 | Per pathway | varies |
+| # | Indicator | WifOR | EPS | UBA | CE Delft | UK | eQALY | Transfer method | ε |
+|---|-----------|:-----:|:---:|:---:|:--------:|:--:|:-----:|-----------------|---|
+| 3.1 | GHG (CO₂, CH₄, N₂O) | ✓ | ✓ | ✓ | ✓ | — | ✓ | UVT (global) | — |
+| 3.2 | Air pollutants (PM, NOₓ, SO₂, NH₃, NMVOC) | ✓ | ✓ | ✓ | ✓ EU27→c VFT+PT | — | ✓ | VFT + PT | 0.8–1.0 |
+| 3.3 | N & P to water | ✓ | ✓ | ✓ | ✓ EU27→c VFT | — | ✓ | PT + VFT | 0.4–0.6 |
+| 4.1 | Land use | ✓ | ✓ | — | ✓ EU27→c VFT | — | ✓ LANCA | VFT / country-specific | 0.4–0.6 |
+| 4.2 | Noise | — | ✓ | ✓ | — | — | — | VFT | 0.8 |
+| 4.3 | Waste | ✓ | ✓ | — | — | — | — | VFT | 0.4–0.6 |
+| 4.4 | Heavy metals & toxics | ✓ | ✓ | — | ✓ T3–5 | — | — | VFT + PT | 0.8–1.0 |
+| 4.5 | Halogenated / refrigerants | — | ✓ | ✓ | ✓ T3 CFC-11 | — | — | UVT / VFT | 0–1.0 |
+| 4.6 | Human health — income / welfare | — | — | — | — | ✓ WELLBY | ✓ HUI | Income elasticity | 1.0–1.3 |
+| 5.1 | Water consumption | ✓ | — | — | — | — | ✓ NatCap | Country-specific | — |
+| 5.2 | Training | ✓ | — | — | — | — | ✓ wages | Country-specific | — |
+| 5.3 | OHS | ✓ | — | — | — | — | ✓ DALY | Country-specific | — |
+| 5.4 | Fossil resources | — | ✓ | — | ✓ T7 ADP | — | — | VFT (from SWE) | 0.5–0.8 |
+| 5.5 | VOCs (detailed) | — | ✓ | — | — | — | — | VFT + PT (from SWE) | 0.8–1.0 |
+| 5.6 | Radionuclides | — | ✓ | — | ✓ T7 ion. rad. | — | — | VFT (from SWE) | 0.8–1.0 |
+| 5.7 | Pesticides | — | ✓ | — | — | — | — | VFT (from SWE) | 0.4–0.6 |
+| 5.8 | Critical minerals | — | ✓ | — | ✓ T7 minerals | — | — | UVT | — |
+| 5.9 | Electricity (per kWh by source) | — | — | ✓ | — | — | — | PT + VFT (from DEU) | 0.8–1.0 |
+| 5.10 | Heat (per kWh by source) | — | — | ✓ | — | — | — | PT + VFT (from DEU) | 0.8–1.0 |
+| 5.11 | Transport (vehicle-km; Pkm/tkm) | — | — | ✓ | — | — | — | Component VFT + PT | 0.8–1.0 |
+| 5.12 | Agriculture | — | — | ✓ | — | — | — | Component reconstruction | varies |
+| 5.13 | WELLBY / QALY unit value | — | — | — | — | ✓ | — | Income elast. (GDPpc^1.3) | 1.0–1.3 |
+| 5.14 | Discount rates (STPR) | — | — | — | — | ✓ | — | Parameter (no transfer) | — |
+| 5.15 | Cultural engagement health | — | — | — | — | ✓ | — | WELLBY × engager count | 1.0–1.3 |
+| 5.16 | Health DALY rates | — | — | — | — | — | ✓ | Country-specific (IHME) | — |
+| 5.17 | HUI (income welfare multiplier) | — | — | — | — | — | ✓ | Endogenous VT (country) | — |
+| 5.18 | HUT (tax welfare multiplier) | — | — | — | — | — | ✓ | Endogenous VT (country) | — |
 
 ---
 
@@ -848,7 +979,10 @@ as supplementary Variable rows for sensitivity analysis.
 ---
 
 *Scripts: Dr Dimitrij Euler, Greenings (dimitrij.euler@greenings.org), with support of Claude Code (Anthropic) |
-EPS Value Factors: Steen (2015), Swedish Life Cycle Center, Chalmers University |
 WifOR Value Factors: WifOR Institute for Economic Research |
+EPS Value Factors: Steen (2015), Swedish Life Cycle Center, Chalmers University |
 UBA Handbook: Nadia Eser, Dr. Astrid Matthey, Dr. Björn Bünger — German Environment Agency (UBA), December 2025 |
-Document Version 2.0 | Last Updated 2026-03-05*
+CE Delft: De Vries et al. — Environmental Prices Handbook 2024: EU27 version, CE Delft, April 2025 |
+UK Wellbeing: HM Treasury Green Book 2026; Wellbeing Guidance 2021; OECD 2025; Frontier Economics / DCMS 2024 |
+eQALY: Valuing Impact (valuingimpact.org) — eQALY Impact Valuation Method, 2025 |
+Document Version 3.0 | Last Updated 2026-03-09*
