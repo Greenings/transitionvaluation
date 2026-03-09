@@ -1,10 +1,10 @@
 # Input Files Methodology and Data Origins
 
-**WifOR Value Factors - Data Provenance Documentation**
-**Version**: 1.0
-**Last Updated**: 2026-01-02
+**All Six Value Factor Systems — Input Files and Data Provenance**
+**Version**: 2.0
+**Last Updated**: 2026-03-09
 
-This document provides comprehensive documentation of input files used within the WifOR Impact Valuation framework, detailing their origins, underlying methodologies, and the processes used to generate the data.
+This document provides comprehensive documentation of input files and primary data sources used across all six value factor systems in the transitionvaluation framework (WifOR, EPS 2015d.1, UBA MC 4.0, CE Delft 2024, UK Wellbeing, eQALY). For each indicator a cross-system overview table is provided; detailed WifOR-specific methodology follows. Detailed input file documentation for CE Delft, UK Wellbeing, and eQALY is maintained in their respective submodule `INPUT_FILES_METHODOLOGY.md` files.
 
 ---
 
@@ -242,10 +242,38 @@ coefficient[year] = coefficient[base] × inflation_factor[year]
 
 ## Indicator-Specific Input Files
 
+This section documents input files and primary data sources for all six value factor systems. For each indicator a **Cross-System Input Sources** table appears first, followed by the detailed WifOR-specific file documentation.
+
+### System Coverage Overview
+
+| System | Folder | Indicators covered | Primary source |
+|--------|--------|--------------------|----------------|
+| **WifOR** | `value-factors/` | GHG, Air, Waste, Water consumption, Land use, Water pollution, Training, OHS | DICE/RICE; UBA/NEEDS; EPS/LANCA; USEtox; Psacharopoulos 2018; IHME GBD |
+| **EPS 2015d.1** | `stockholm-value-factors/` | GHG, Air, N/P water, Waste, Land use, Heavy metals, Refrigerants, Noise, VOCs, Fossil resources, Radionuclides, Pesticides, Critical minerals | EPS 2015d.1 index (Steen 2015); 892 substances |
+| **UBA MC 4.0** | `uba-value-factors/` | GHG, Air, Noise, N/P water, Refrigerants, Electricity, Heat, Transport, Agriculture | GIVE model (Anthoff 2025); EcoSenseWeb v1.3; UBA Handbook Tables 1–27 (Eser et al. 2025) |
+| **CE Delft 2024** | `cedelft-value-factors/` | GHG, Air, N/P water, Land use, Heavy metals, Fossil ADP, Radionuclides, Critical minerals | Environmental Prices Handbook EU27 (De Vries et al. 2025) |
+| **UK Wellbeing** | `uk-value-factors/` | WELLBY/QALY, Discount rates, Cultural engagement health | HM Treasury Green Book 2026; NICE HTA; Wellbeing Guidance 2021 |
+| **eQALY** | `valuingimpact-value-factors/` | GHG (NatCap), Air (NatCap), N/P water (NatCap), Land use (LANCA), Water consumption, Training, OHS, Health DALY rates, HUI, HUT | IHME GBD 2019; World Bank; IMF WEO; LANCA v2.0; HUI/HUT welfare model |
+
+---
+
 ### 1. Greenhouse Gas Emissions (GHG)
 
 **File**: `20241022_scc_nordhaus.h5`
 **Script**: `020_241024_prepare_GHG_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `20241022_scc_nordhaus.h5` | DICE/RICE (Nordhaus & Barrage 2024) — integrated assessment model; global SCC trajectory | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `001_inorganic_gases` (Steen 2015) | Climate damage pathway via YOLL (50,000 ELU/person-year) + crop + fish + coastal | EUR 2015 |
+| **UBA MC 4.0** | GIVE model (Anthoff 2025) → *UBA Handbook Table 1* (Eser et al. 2025) | Equity-weighted global SCC; 0 % and 1 % PRTP; direct CH₄/N₂O modelling (not GWP100 proxies) | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) | Literature-based SCC; CO₂, CH₄, N₂O | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap GHG pathway; IHME GBD 2019 burden data | Income-utility–weighted climate damage | USD 2023 |
+
+*WifOR-specific methodology below. For UBA MC 4.0: the GIVE (Global Impacts and Valuation of Emissions) model replaces DICE; it applies equity-weighting with German income as reference and provides two PRTP scenarios.*
 
 #### Origin
 - **Source**: DICE Model (Dynamic Integrated Climate-Economy)
@@ -303,6 +331,17 @@ After conversion and inflation:
 
 **File**: `220707_Air pollution_update.xlsx`
 **Script**: `008_241001_prepare_AirPollution_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220707_Air pollution_update.xlsx` | UBA/NEEDS methodology (EcoSenseWeb); income-elasticity VFT; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `001_inorganic_gases` + `002_particles` (Steen 2015) | YOLL pathway + crop + biodiversity + materials; Swedish income anchor | EUR 2015 |
+| **UBA MC 4.0** | EcoSenseWeb v1.3 → *UBA Handbook Tables 2–4* (Eser et al. 2025) | German receptor data; three context tiers (unknown source, combustion, road traffic) | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) | Impact pathway approach (IPA); EU27 average receptor data | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap air pathway; IHME GBD 2019 + Chen & Hoek 2020 dose-response | Income-utility–weighted health damage; LANCA exposure scaling | USD 2023 |
 
 #### Origin
 - **Primary Source**: German Federal Environment Agency (UBA) methodology
@@ -423,6 +462,17 @@ India (GDP per capita ~$2k, elasticity 1.0): USD 100 × (2/50)^1.0 = USD 4/kg
 **File**: `220509_Waste figures merged_update.xlsx`
 **Script**: `007_241001_prepare_Waste_my.py`
 
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220509_Waste figures merged_update.xlsx` | IPCC landfill GHG + EXIOPOL accounts + PwC disamenity + HARAS leachate model; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `012_waste` (Steen 2015) | Plastic litter to ground and water only; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
 #### Origin
 - **Mixed Sources**:
   - IPCC (greenhouse gas emissions)
@@ -490,6 +540,17 @@ Columns: country_code, costs (USD/kg)
 **File**: `220511_Water consumption_update.xlsx`
 **Script**: `009_241001_prepare_WaterConsumption_my.py`
 
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220511_Water consumption_update.xlsx` | Ligthart & van Harmelen 2019 (economic damage) + Debarre et al. 2022 (DALY health damage) + WULCA AWARE scarcity scaling; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap water consumption pathway; IHME 2019 + WULCA AWARE + income utility | Country-specific via AWARE scarcity + income elasticity | USD 2023 |
+
 #### Origin
 - **Academic Research**:
   - Ligthart & van Harmelen (2019)
@@ -549,6 +610,17 @@ Note: Total damages = Economic + Health
 
 **File**: `230317_Landuse_update_ZK.xlsx`
 **Script**: `010_241001_prepare_LandUse_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `230317_Landuse_update_ZK.xlsx` | EPS 2015d.1 ecosystem service monetisation + LANCA v2.5 country characterisation; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `009_land_use` (23 land types; Steen 2015) | Five pathways: climate, crop, wood, water regulation, biodiversity (NEX); Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | — not covered (explicitly excluded from MC 4.0; no standalone land-use VF recommended) | — | — |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 6 land use | Ecosystem service loss; EU27 average | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | LANCA v2.0 (Fraunhofer IBP); HUT global average (0.7581) welfare multiplier | Ecosystem service value × HUT social return | USD 2023 |
 
 #### Origin
 - **Primary Framework**: Environmental Priority Strategies (EPS)
@@ -621,6 +693,17 @@ Each column contains damage cost (USD/ha)
 
 **File**: `230324_WaterPollution_Mon_Coef_Final_DC.xlsx`
 **Script**: `013_241014_prepare_WaterPol_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `230324_WaterPollution_Mon_Coef_Final_DC.xlsx` | Steen 2020 (N, P nutrients via eutrophication pathway) + USEtox model (9 heavy metals); PPP value transfer from Ahlroth 2009 (Sweden base); 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `005_emissions_to_water` (Steen 2015) | Eutrophication via oxygen deficiency + fish/biodiversity/drinking water pathways; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | EcoSenseWeb + limiting-substance model → *UBA Handbook Tables 22–24* (Eser et al. 2025) | Conservative lower bound: only limiting nutrient (N or P) charged; air N valued via health pathway | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Tables 1–2 (N, P) and Tables 3–5 (heavy metals to air, water, soil) | IPA; EU27 average | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap water pollution pathway; LANCA v2.0 + income utility | Country-specific via LANCA characterisation + income elasticity | USD 2023 |
 
 #### Origin
 - **Methodology**:
@@ -726,6 +809,17 @@ Column: Value (damage cost in USD/kg)
 
 **File**: `220529_training_value_per_hour_bysector.h5`
 **Script**: `014_241016_prepare_Training_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220529_training_value_per_hour_bysector.h5` | Psacharopoulos & Patrinos 2018 returns to education (~9%/year); PPP + GVA sector adjustment; 188 countries × 21 NACE sectors | USD 2020 |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | Wages × HUI welfare multiplier; sector-specific GVA data; World Bank income data | Human capital benefit monetised via health utility of income | USD 2023 |
 
 #### Origin
 - **Theoretical Foundation**: Returns to schooling research
@@ -845,6 +939,17 @@ Construction Sector (lower skill premium):
 
 **File**: `220616_monetization_value_per_incident_NEW.xlsx`
 **Script**: `015_241016_prepare_OHS_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220616_monetization_value_per_incident_NEW.xlsx` | IHME GBD 2019 disability weights + Eurostat incident rates; global USD 200,000/DALY (uniform); 188 countries | USD (mixed) |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | IHME GBD 2019 DALY rates (occupational + WASH + dietary risk factors) × income utility (HUI); 188 countries | Country-specific DALY monetisation via HUI welfare multiplier | USD 2023 |
 
 #### Origin
 - **Methodology**: Health economics (DALY approach)
@@ -981,6 +1086,178 @@ Income-Adjusted Alternative:
 - **Transparency**: High (GBD is public, DALY methodology is well-documented)
 - **Confidence criteria**: Met (rated "Well Established" in README)
 - **Value note**: Uses a single global DALY value for ethical consistency
+
+---
+
+### 9. Noise
+
+*Not covered by WifOR. Primary systems: EPS 2015d.1, UBA MC 4.0.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | EPS 2015d.1 index — `007_noise` (Steen 2015) | Road traffic; sleep disturbance → YOLL pathway; dB level converted via WHO exposure-response; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | EcoSenseWeb + health valuation → *UBA Handbook Tables 19–20* (Eser et al. 2025) | Road, rail, and air traffic noise; annoyance + cognitive impairment in children; per dB(A) class; German receptor data | EUR 2025 |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**Key inputs for UBA noise (Tables 19–20):**
+- WHO exposure–response functions (Guski et al. 2017) — % highly annoyed by dB(A) class
+- EcoSenseWeb receptor density data — German population along road/rail/flight corridors
+- Health valuation: VOLY (Value of a Life Year) from meta-analysis; German income anchor
+
+---
+
+### 10. Halogenated Compounds and Refrigerants
+
+*Not covered by WifOR. Primary systems: EPS 2015d.1 (283 substances), UBA MC 4.0 (8 refrigerants), CE Delft 2024 (CFC-11 equivalent).*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | EPS 2015d.1 index — `004_halogenated_organics` (Steen 2015); 283 substances | Climate change + ozone depletion + human toxicity pathways; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | GIVE model GWP100 × CO₂ VF → *UBA Handbook Table 7* (Eser et al. 2025); 8 refrigerants | Climate pathway only (GWP100 × UBA CO₂ VF); R-32, R-410A, R-134a, R-507A, R-717, R-290, and others | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 3 | CFC-11 equivalent; climate via SCC | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**Key inputs for UBA refrigerants:** IPCC AR6 Table 7.SM.7 GWP100 values per refrigerant × UBA CO₂ VF from Table 1.
+
+---
+
+### 11. Electricity — Life-Cycle VF per kWh by Source
+
+*Unique to UBA MC 4.0.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered as per-kWh electricity VF (fossil resource depletion in §5.15) | — | — |
+| **UBA MC 4.0** | LCA inventory + EcoSenseWeb + GIVE → *UBA Handbook Table 5* (Eser et al. 2025) | Life-cycle GHG + air pollutants per kWh per source; German grid losses and receptor data; 9 electricity sources | EUR-cent 2025/kWh |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**UBA electricity sources (Table 5):** German mix, lignite, hard coal, natural gas, nuclear, wind onshore/offshore, solar PV, hydro, biomass.
+
+---
+
+### 12. Heat Generation — Life-Cycle VF per kWh by Source
+
+*Unique to UBA MC 4.0.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | LCA inventory + EcoSenseWeb + GIVE → *UBA Handbook Table 6* (Eser et al. 2025) | Life-cycle GHG + AP per kWh final energy; 7 heat sources; German receptor data | EUR-cent 2025/kWh |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**UBA heat sources (Table 6):** Natural gas, heating oil, hard coal, lignite, biomass, solar thermal, heat pumps (COP-adjusted).
+
+---
+
+### 13. Transport — per Vehicle-km and per Pkm/tkm
+
+*Unique to UBA MC 4.0.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | LCA inventory + EcoSenseWeb + GIVE + infrastructure data → *UBA Handbook Tables 9–18* (Eser et al. 2025) | Cars, vans, heavy-duty trucks, buses, rail, air, ship; GHG + AP exhaust + AP abrasion + infrastructure + energy supply | EUR 2025/veh-km; EUR 2025/Pkm or tkm |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**UBA transport tables:** Tables 9–16 (per vehicle-km by vehicle type and fuel); Tables 17–18 (per Pkm/tkm using ITF occupancy and load factors).
+
+---
+
+### 14. Agriculture — per kg Product and per kg Nutrient Surplus
+
+*Primary system: UBA MC 4.0. CE Delft covers abiotic depletion only.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered (N/P nutrients partially in §5.6 Water Pollution) | — | — |
+| **EPS 2015d.1** | — not covered as per-product VF | — | — |
+| **UBA MC 4.0** | IPCC Tier 2 emission factors + EcoSenseWeb + Karzai & Hirschfeld 2024 → *UBA Handbook Tables 25–27* (Eser et al. 2025) | Milk, beef, pork, poultry, eggs; N fertiliser; N/P surpluses; GHG + NH₃ + N pathways | EUR 2025/kg product |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 7 (fossil ADP, minerals) | Abiotic resource depletion for agricultural inputs only | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**UBA agriculture key inputs:** IPCC Tier 2 livestock emission factors; FAO GLEAM GHG intensities; EcoSenseWeb for NH₃ health impacts; N/P to water via UBA Tables 22–24 limiting-substance approach.
+
+---
+
+### 15. Fossil Resource Depletion
+
+*Not covered by WifOR or UBA as standalone. Primary systems: EPS 2015d.1, CE Delft 2024.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | EPS 2015d.1 index — `010_fossil_resources` (Steen 2015); fossil oil, coal, lignite, natural gas | Future extraction cost increase + energy substitution cost; globally anchored, Swedish income | EUR 2015 |
+| **UBA MC 4.0** | — not covered as standalone; embedded within electricity, heat, and transport life-cycle VFs | — | — |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 7 (fossil ADP) | Abiotic depletion potential method; globally uniform | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+---
+
+### 16. WELLBY / QALY Unit Value and Discount Rates
+
+*Unique to UK Wellbeing system.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | HM Treasury Green Book 2026 (GBP 70,000/QALY); NICE HTA (GBP 20,000–30,000/QALY); Frontier Economics / DCMS Wellbeing Guidance 2021 (GBP 13,000/WELLBY); OECD 2025 geographic transfer guidance | WELLBY = midpoint of QALY-income anchor and QALY-value anchor; temporal uprating by GDP deflator × per-capita growth^1.3 | GBP 2019/2024 |
+| **eQALY** | IHME GBD 2019 + World Bank GDP per capita + IMF WEO deflators → HUI (health utility of income) | Endogenous country-specific welfare multiplier on income impacts | USD 2023 |
+
+**Key UK input files:** `01_wellby_valuations.xlsx` (WELLBY, QALY); `05_discount_rates.xlsx` (STPR 3.5%; health rate 1.5%); `04_cultural_engagement.xlsx` (GBP 122–1,310/person/yr).
+
+---
+
+### 17. HUI and HUT — Health Utility Welfare Multipliers
+
+*Unique to eQALY system.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | IHME GBD 2019 health burden data + World Bank GDP per capita PPP + IMF WEO deflators → `01_hui_output.h5` / `02_hut_output.h5` | HUI (health utility of income): converts monetary income impact to welfare equivalent per country. HUT (health utility of taxes): social return on public investment (SROI). | USD 2023 |
+
+**HUI application:** applied as country-specific multiplier on all income-generating indicators (Training, wages). **HUT application:** global average (0.7581) scales LANCA ecosystem values; country-specific HUT scales public revenue impacts.
 
 ---
 
@@ -1200,7 +1477,35 @@ This section documents each external source used across all WifOR indicator scri
 
 ---
 
-### 6.16 Eurostat — Occupational Safety Statistics (OHS)
+### 6.16 GIVE Model — Global Impacts and Valuation of Emissions (UBA MC 4.0 GHG)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Anthoff, D. (2025). *GIVE model — Global Impacts and Valuation of Emissions*. [Academic publication and model repository; version used in UBA Handbook MC 4.0.] |
+| **License name** | To be confirmed — academic model; likely open-source (MIT or similar) on GitHub |
+| **License URL** | To be confirmed |
+| **Commercial use** | To be confirmed |
+| **Attribution required** | Yes — Anthoff and UBA Handbook (Eser et al. 2025) must be cited |
+| **Redistribution** | To be confirmed |
+| **Notes** | The GIVE model (successor to the FUND model) is used exclusively by UBA MC 4.0 to derive GHG value factors (Table 1). It applies equity-weighted damage functions with German income as the reference point, providing two PRTP scenarios (0 % and 1 %). GIVE models CH₄ and N₂O directly (not via GWP100 proxies), unlike DICE/RICE. This is the key methodological distinction between UBA and WifOR GHG value factors. |
+
+---
+
+### 6.17 Environmental Prices Handbook EU27 — CE Delft 2024
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | De Vries, J. et al. (2025). *Environmental Prices Handbook EU27, 2024 edition*. CE Delft, Delft, April 2025. |
+| **License name** | CE Delft proprietary — all rights reserved |
+| **License URL** | https://ce.nl/en/ |
+| **Commercial use** | ✗ Restricted — handbook purchased or licensed from CE Delft; value factors not freely redistributable |
+| **Attribution required** | Yes — CE Delft and the specific handbook edition must be cited |
+| **Redistribution** | ✗ Not permitted without CE Delft permission |
+| **Notes** | Primary source for all CE Delft 2024 value factors (Tables 1–8 covering GHG, air pollutants, water, heavy metals, fossil ADP, radionuclides, critical minerals, land use). The handbook provides EU27-average values in EUR 2021 that must be transferred to other countries via VFT (see VALUE_TRANSFER.md). |
+
+---
+
+### 6.18 Eurostat — Occupational Safety Statistics (OHS)
 
 | Attribute | Detail |
 |-----------|--------|
@@ -1214,7 +1519,7 @@ This section documents each external source used across all WifOR indicator scri
 
 ---
 
-### 6.17 IHME — Global Burden of Disease (OHS Disability Weights)
+### 6.19 IHME — Global Burden of Disease (OHS Disability Weights)
 
 | Attribute | Detail |
 |-----------|--------|
@@ -1303,7 +1608,7 @@ See README.md Section 6 for maturity levels:
 
 ---
 
-**Document Version**: 1.1
+**Document Version**: 2.0
 **Last Updated**: 2026-03-09
 **Maintained by**: WifOR Development Team
 **Contact**: dimitrij.euler@greenings.org
