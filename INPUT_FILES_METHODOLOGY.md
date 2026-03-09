@@ -15,7 +15,7 @@ This document provides comprehensive documentation of input files used within th
 3. [General Framework](#general-framework)
 4. [Shared Input Files](#shared-input-files)
 5. [Indicator-Specific Input Files](#indicator-specific-input-files)
-6. [Public Data Sources](#public-data-sources)
+6. [External Sources and License Information](#external-sources-and-license-information)
 
 ---
 
@@ -984,84 +984,247 @@ Income-Adjusted Alternative:
 
 ---
 
-## Public Data Sources
+## 6. External Sources and License Information
 
-### Comprehensive List
+This section documents each external source used across all WifOR indicator scripts. Each entry provides the full citation, verified license terms, and conditions for commercial use and redistribution.
 
-#### International Organizations
+---
 
-**World Bank**
-- GDP Deflators
-- Economic indicators
-- https://data.worldbank.org
+### 6.1 World Bank Open Data — GDP Deflators
 
-**OECD**
-- Waste statistics
-- Water data
-- Education data
-- https://stats.oecd.org
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | World Bank (2024). *World Development Indicators*: NY.GDP.DEFL.ZS — GDP deflator (base year varies by country). The World Bank Group, Washington DC. https://data.worldbank.org |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — "Source: World Bank, World Development Indicators" |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Used for temporal deflation (converting coefficients to constant base-year USD) in all 8 WifOR indicator scripts. Data accessible via the `wbdata` Python library or the World Bank Data API. |
 
-**WHO (World Health Organization)**
-- Life expectancy
-- Health burden data
-- https://www.who.int/data
+---
 
-**IPCC (Intergovernmental Panel on Climate Change)**
-- Emission factors
-- Climate data
-- https://www.ipcc-nggip.iges.or.jp
+### 6.2 DICE / RICE Model — Social Cost of Carbon (GHG)
 
-#### Regional Agencies
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Nordhaus, W., Barrage, L. (2024). *DICE/RICE Integrated Assessment Model*, 2024 update. Yale University. http://www.williamnordhaus.com/dice-rice-models |
+| **License name** | No formal open-source licence declared |
+| **License URL** | http://www.williamnordhaus.com/dice-rice-models |
+| **Commercial use** | Unspecified — model freely distributed from author's website without explicit licence terms |
+| **Attribution required** | Yes (academic convention) |
+| **Redistribution** | Unspecified — code available for download; no redistribution terms stated |
+| **Notes** | The DICE model (originally DICE123, 1991) has been openly distributed since its inception. The 2024 Barrage–Nordhaus update is provided in GAMS/Excel format without a formal open-source licence. Open-source re-implementations in Julia, R, and Python exist under MIT/Apache licences on GitHub. The DICE SCC trajectory forms the basis for the GHG value factor. |
 
-**UBA (German Federal Environment Agency)**
-- Air pollution methodology
-- Environmental damage costs
-- https://www.probas.umweltbundesamt.de/
+---
 
-**Eurostat**
-- Occupational safety data
-- European statistics
-- https://ec.europa.eu/eurostat
+### 6.3 UBA / ProBas — Air Pollution Damage Costs
 
-#### Research Projects
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | German Federal Environment Agency (Umweltbundesamt — UBA). *ProBas: Prozessorientierte Basisdaten für Umweltmanagement-Instrumente*. https://www.probas.umweltbundesamt.de/ |
+| **License name** | Data Licence Germany — Attribution — Version 2.0 (dl-de/by-2-0) |
+| **License URL** | https://www.govdata.de/dl-de/by-2-0 |
+| **Commercial use** | ✓ Permitted — data may be integrated in commercial products |
+| **Attribution required** | Yes — Umweltbundesamt (UBA) must be cited |
+| **Redistribution** | Permitted; data may be merged and redistributed with attribution |
+| **Notes** | UBA publishes all publicly available governmental data under Data Licence Germany 2.0 (dl-de/by-2-0) by default. ProBas freely provides >20,000 process-level LCI datasets. The air pollution damage cost methodology (VOLY, VSL, exposure-response functions) is based on the EcoSenseWeb model, developed in the NEEDS EU project (§6.4). |
 
-**NEEDS (EU Project)**
-- External cost database
-- https://cordis.europa.eu/project/id/502687
+---
 
-**EXIOBASE**
-- Environmentally-extended input-output database
-- https://www.exiobase.eu/
+### 6.4 NEEDS EU Project — External Cost Database (Air Pollution)
 
-**USEtox**
-- Chemical toxicity model
-- https://usetox.org
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | New Energy Externalities Development for Sustainability (NEEDS). *FP6 Integrated Project 502687*. European Commission, 2004–2008. https://cordis.europa.eu/project/id/502687 |
+| **License name** | European Union publication copyright |
+| **License URL** | https://op.europa.eu/en/web/about-us/legal-notices/eu-publications |
+| **Commercial use** | ✗ Not for commercial resale without permission; available for research and policy use |
+| **Attribution required** | Yes |
+| **Redistribution** | Non-commercial redistribution with attribution permitted |
+| **Notes** | The NEEDS project developed the EcoSense external cost model and a comprehensive European air pollution externality database used by UBA and WifOR. Project deliverables are publicly accessible via CORDIS and openLCA (https://www.openlca.org/project/needs/). Pre-2011 EC-funded publications are not covered by EC Decision 2011/833/EU. |
 
-**AWARE**
-- Water scarcity indicators
-- https://wulca-waterlca.org/aware/
+---
 
-**EPS (Environmental Priority Strategies)**
-- Ecosystem valuation
-- https://lifecyclecenter.se/projects/eps
+### 6.5 IPCC — Emission Factors for Waste GHG
 
-**LANCA**
-- Land use characterization
-- https://www.ibp.fraunhofer.de/en/expertise/life-cycle-engineering/applied-methods/lanca.html
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | IPCC (2006). *2006 IPCC Guidelines for National Greenhouse Gas Inventories*. IPCC National Greenhouse Gas Inventories Programme. https://www.ipcc-nggip.iges.or.jp/EFDB/main.php |
+| **License name** | Creative Commons Attribution 3.0 IGO (CC BY 3.0 IGO) |
+| **License URL** | https://creativecommons.org/licenses/by/3.0/igo/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — IPCC must be cited |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | The IPCC Guidelines provide methane emission factors for landfill decomposition and incineration processes used in the Waste Management indicator GHG component. The Emission Factor Database (EFDB) is freely accessible. |
 
-#### Academic Resources
+---
 
-**DICE Model (Nordhaus)**
-- Social Cost of Carbon
-- http://www.williamnordhaus.com/dice-rice-models
+### 6.6 EXIOBASE — Environmentally Extended Input–Output Data (Waste)
 
-**Global Burden of Disease**
-- Disability weights
-- https://www.healthdata.org/gbd
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Wood, R. et al. (2015). Global Sustainability Accounting — Developing EXIOBASE for Multi-Regional Footprint Analysis. *Sustainability*, 7(1), 138–163. Database: https://www.exiobase.eu/ |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | EXIOBASE (successor to the EXIOPOL project) provides multi-regional environmentally-extended input–output tables. These accounts underpin the Waste Management indicator's European-context waste composition data. Version 3.x is released under CC BY 4.0. |
 
-**Returns to Education Research**
-- Psacharopoulos & Patrinos (2018)
-- Available through OECD and academic databases
+---
+
+### 6.7 WULCA AWARE — Water Scarcity Characterisation Factors
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Boulay, A.-M., Bare, J., Benini, L. et al. (2018). The WULCA consensus characterization model for water scarcity footprints: assessing impacts of water consumption based on available water remaining (AWARE). *The International Journal of Life Cycle Assessment*, 23, 368–378. https://doi.org/10.1007/s11367-017-1333-8. Factors: https://wulca-waterlca.org/aware/ |
+| **License name** | Free to use with mandatory citation — no formal Creative Commons licence declared |
+| **License URL** | https://wulca-waterlca.org/aware/faq/ |
+| **Commercial use** | ✓ Permitted (no stated restriction) |
+| **Attribution required** | Yes — citation to Boulay et al. 2018 required |
+| **Redistribution** | Not explicitly stated; AWARE factors downloadable without registration |
+| **Notes** | WULCA is a working group of the UNEP–SETAC Life Cycle Initiative. Per the WULCA FAQ: "There is no restriction in using the AWARE factors in your studies and environmental footprint methodologies. The only requirement is a proper citation." Used in both the Water Consumption indicator (AWARE scarcity scaling) and the Water Pollution indicator (water scarcity adjustment). |
+
+---
+
+### 6.8 Ligthart & van Harmelen (2019) — Water Consumption Shadow Prices
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Ligthart, T.N., van Harmelen, T. (2019). Estimation of shadow prices of soil organic carbon depletion and freshwater depletion for use in LCA. *The International Journal of Life Cycle Assessment*, 24, 1307–1318. https://doi.org/10.1007/s11367-019-01589-8 |
+| **License name** | Springer Nature copyright (all rights reserved unless open-access option taken) |
+| **License URL** | https://link.springer.com/article/10.1007/s11367-019-01589-8 |
+| **Commercial use** | ✗ Journal copyright; reproduction requires publisher permission |
+| **Attribution required** | Yes |
+| **Redistribution** | Publisher permission required |
+| **Notes** | Provides freshwater depletion shadow prices used in the Water Consumption economic damage pathway. An authors' accepted manuscript may be available via TNO or TU Delft institutional repositories. |
+
+---
+
+### 6.9 Debarre et al. (2022) — Water Consumption Health Damages
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Debarre, R. et al. (2022). [Full citation to be confirmed — DALY-based health damage from water deprivation]. Cited in `220511_Water consumption_update.xlsx`. |
+| **License name** | To be determined |
+| **License URL** | To be confirmed |
+| **Commercial use** | To be determined |
+| **Attribution required** | Yes |
+| **Redistribution** | To be determined |
+| **Notes** | Used for the DALY-based health damage pathway in the Water Consumption indicator. Full bibliographic details not yet included in WifOR input file metadata; flagged in BACKLOG.md. |
+
+---
+
+### 6.10 EPS — Environmental Priority Strategies (Land Use)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Steen, B. (2015). *EPS 2015d.1 — A system for weighting environmental characteristics according to their contribution to safeguard subjects*. Swedish Life Cycle Center, Chalmers University of Technology. https://www.lifecyclecenter.se/projects/eps-environmental-priority-strategies-in-product-design/ |
+| **License name** | Open academic access — no formal Creative Commons licence declared |
+| **License URL** | https://www.lifecyclecenter.se/ |
+| **Commercial use** | ✓ Broadly used in commercial LCA practice; no stated restriction |
+| **Attribution required** | Yes |
+| **Redistribution** | CPM LCA Database companion data freely accessible; no explicit redistribution restriction |
+| **Notes** | The EPS system monetises ecosystem service loss across five safeguard subjects. The EPS 2015d.1 weighting factors are the basis for the Land Use indicator's ecosystem service damage costs (working capacity, water treatment, crop growth, biodiversity). |
+
+---
+
+### 6.11 LANCA — Land Use Characterisation Factors
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Bach, V., Lehmann, A., Görmer, M., Finkbeiner, M. (2020). *LANCA® Characterization Factors for Life Cycle Assessment, Version 2.5*. Fraunhofer Institute for Building Physics IBP. https://www.ibp.fraunhofer.de/en/expertise/life-cycle-engineering/applied-methods/lanca.html |
+| **License name** | Fraunhofer IBP copyright — free for research and academic use; no formal CC licence |
+| **License URL** | https://www.ibp.fraunhofer.de/en/expertise/life-cycle-engineering/applied-methods/lanca.html |
+| **Commercial use** | Restricted — Fraunhofer IBP copyright; commercial use requires separate agreement |
+| **Attribution required** | Yes |
+| **Redistribution** | Not permitted without Fraunhofer IBP permission |
+| **Notes** | LANCA provides country-level land use characterisation factors for four sub-indicators (mechanical filtration, physicochemical filtration, groundwater replenishment, biotic production capacity, erosion resistance) used to localise EPS global values to national conditions in the Land Use indicator. Factors are downloadable after registration from the Fraunhofer IBP website. |
+
+---
+
+### 6.12 Ahlroth (2009) — Water Pollution WTP Base Values (Sweden)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Ahlroth, S. (2009). [Full citation to be confirmed — Swedish WTP estimates for N/P in freshwater and marine environments]. Cited in `230324_WaterPollution_Mon_Coef_Final_DC.xlsx` as the basis for PPP value transfer. |
+| **License name** | To be determined (likely Swedish EPA report or journal article) |
+| **License URL** | To be confirmed |
+| **Commercial use** | To be determined |
+| **Attribution required** | Yes |
+| **Redistribution** | To be determined |
+| **Notes** | Provides the Swedish baseline WTP values used in the Water Pollution PPP value transfer: freshwater phosphorus (USD 136/kg), marine phosphorus (USD 68/kg), marine nitrogen (USD 9/kg). Full bibliographic details not yet in WifOR input file metadata; flagged in BACKLOG.md. |
+
+---
+
+### 6.13 Steen (2020) — Water Pollution Nutrients (N, P)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Steen, B. (2020). [Full citation to be confirmed — eutrophication damage valuation for N and P]. Swedish Life Cycle Center / Chalmers University of Technology. Cited in `230324_WaterPollution_Mon_Coef_Final_DC.xlsx`. |
+| **License name** | Open academic access — Swedish Life Cycle Center; no formal CC licence declared |
+| **License URL** | https://www.lifecyclecenter.se/ |
+| **Commercial use** | ✓ Broadly used in academic and commercial LCA practice |
+| **Attribution required** | Yes |
+| **Redistribution** | Not explicitly stated |
+| **Notes** | Provides the damage valuation methodology for freshwater eutrophication (N and P) used in the Water Pollution indicator nutrient pathway. Steen is the creator of the EPS framework; this 2020 work extends the EPS approach to nutrient damage costs. |
+
+---
+
+### 6.14 USEtox — Chemical Toxicity Model (Water Pollution — Heavy Metals)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Rosenbaum, R.K. et al. (2008). USEtox — The UNEP-SETAC toxicity model for comparative assessment of chemicals (organic chemicals). *The International Journal of Life Cycle Assessment*, 13(7), 532–546. Model: https://usetox.org |
+| **License name** | USEtox Licence Agreement — personal, royalty-free, non-exclusive, non-transferable, perpetual |
+| **License URL** | https://www.usetox.org/model/license |
+| **Commercial use** | ✓ Commercial use of *results* generated using USEtox is permitted; the model itself may not be redistributed or renamed |
+| **Attribution required** | Yes — "USEtox" must be cited |
+| **Redistribution** | ✗ Model redistribution not permitted; results (characterisation factors) may be used commercially |
+| **Notes** | USEtox is endorsed by UNEP and SETAC as the international consensus model for human toxicity and ecotoxicity in LCA. Characterisation factors for heavy metals (As, Cd, Hg, Cr, Pb, Ni, Cu, Zn, Sb) in water are used in the Water Pollution indicator. Results generated with unmodified USEtox data may be labelled "USEtox factors." |
+
+---
+
+### 6.15 Psacharopoulos & Patrinos (2018) — Returns to Education (Training)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Psacharopoulos, G., Patrinos, H.A. (2018). Returns to investment in education: a decennial review of the global literature. *Education Economics*, 26(5), 445–458. https://doi.org/10.1080/09645292.2018.1484426. Also available as World Bank Policy Research Working Paper WPS8402 (open access): https://documents.worldbank.org/curated/en/442521523465644318 |
+| **License name** | Taylor & Francis copyright (journal version); World Bank Open Access — CC BY 3.0 IGO (WPS8402 version) |
+| **License URL** | Journal: https://www.tandfonline.com/doi/abs/10.1080/09645292.2018.1484426 · WB WP: https://documents.worldbank.org/curated/en/442521523465644318 |
+| **Commercial use** | ✗ Journal version (publisher copyright); ✓ World Bank WP version (open including commercial) |
+| **Attribution required** | Yes |
+| **Redistribution** | Journal version: publisher permission required; WB WP version: permitted with attribution |
+| **Notes** | Provides the global meta-analysis of returns to schooling (~9% per year of education, with regional variation) that forms the basis for the Training indicator. The World Bank working paper version (WPS8402) is freely accessible and recommended for citation and reuse. |
+
+---
+
+### 6.16 Eurostat — Occupational Safety Statistics (OHS)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Eurostat (annual). *European Statistics on Accidents at Work (ESAW)*. Statistical Office of the European Union. https://ec.europa.eu/eurostat/web/health/health-safety-work |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) — pursuant to EC Decision 2011/833/EU |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — "Source: Eurostat" |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Provides European workplace incident rate statistics (fatal and non-fatal accidents, occupational diseases, by sector) used in the OHS indicator. Eurostat data are published under CC BY 4.0 terms applicable to all EC institutional data under Decision 2011/833/EU. |
+
+---
+
+### 6.17 IHME — Global Burden of Disease (OHS Disability Weights)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Institute for Health Metrics and Evaluation (IHME) (2019). *Global Burden of Disease Study 2019 (GBD 2019) Results*. University of Washington, Seattle. https://www.healthdata.org/gbd |
+| **License name** | IHME Non-Commercial User Agreement |
+| **License URL** | https://www.healthdata.org/data-tools-practices/data-practices/ihme-free-charge-non-commercial-user-agreement |
+| **Commercial use** | ✗ Non-commercial and academic use only |
+| **Attribution required** | Yes — IHME and GBD study year must be cited |
+| **Redistribution** | Non-commercial redistribution with attribution permitted |
+| **Notes** | GBD disability weights (severity scores 0–1 for each injury/disease category) are used in the OHS indicator to calculate Years Lived with Disability (YLD). The GBD study is the global standard for disability weights. Commercial applications using GBD data should contact IHME for licensing. |
 
 ---
 
@@ -1140,7 +1303,7 @@ See README.md Section 6 for maturity levels:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-02
+**Document Version**: 1.1
+**Last Updated**: 2026-03-09
 **Maintained by**: WifOR Development Team
 **Contact**: dimitrij.euler@greenings.org

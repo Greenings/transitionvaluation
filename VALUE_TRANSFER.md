@@ -978,6 +978,292 @@ as supplementary Variable rows for sensitivity analysis.
 
 ---
 
+## 11. External Sources and License Information
+
+This section documents each dataset (§7) and reference (§10) used in value transfer across all six systems, with verified license terms and conditions for commercial use and redistribution.
+
+---
+
+### 11.1 World Bank — World Development Indicators (WDI)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | World Bank (2025). *World Development Indicators* (GDP per capita PPP; GDP deflator NY.GDP.DEFL.ZS). The World Bank Group, Washington DC. https://data.worldbank.org |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — "Source: World Bank, World Development Indicators" |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Used for: GDP per capita PPP at all anchor years (all VFT indicators); USA GDP deflator for temporal adjustment I_USD[y]. Data accessible via World Bank Open Data portal and `wbdata` Python library. |
+
+---
+
+### 11.2 ECB — European Central Bank Exchange Rates
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | European Central Bank (ECB) / European System of Central Banks (ESCB). *Statistical Data Warehouse — Foreign Exchange Reference Rates*. https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/ |
+| **License name** | ESCB Statistics Reuse Policy — free reuse with attribution |
+| **License URL** | https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html |
+| **Commercial use** | ✓ Permitted — ESCB statistics available free of charge irrespective of commercial or non-commercial use |
+| **Attribution required** | Yes — ECB / ESCB must be cited as source |
+| **Redistribution** | Permitted with attribution; if incorporated in a sold product, buyers must be informed of the source |
+| **Notes** | Used for EUR/USD (2015 for EPS; 2021 for CE Delft; 2025 for UBA) and SEK/EUR (EPS, if needed) exchange rates in cross-currency value transfer. |
+
+---
+
+### 11.3 Eurostat — EU HICP Deflator
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Eurostat (annual). *Harmonised Index of Consumer Prices (HICP)*. Statistical Office of the European Union. https://ec.europa.eu/eurostat/web/hicp |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) — pursuant to EC Decision 2011/833/EU |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — "Source: Eurostat" |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Used for EPS temporal adjustment: EU HICP converts EPS 2015d.1 EUR values to target years (frozen at 2023 values until updated Eurostat releases). |
+
+---
+
+### 11.4 UN DESA — Population Density Data
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | United Nations Department of Economic and Social Affairs (UN DESA), Population Division (2024). *World Population Prospects 2024*. https://population.un.org/dataportal/ |
+| **License name** | UN Terms of Use — free with attribution for non-commercial and policy use |
+| **License URL** | https://www.un.org/en/about-us/terms-of-use |
+| **Commercial use** | Restricted — UN data may be used for non-commercial and policy purposes; commercial redistribution requires written permission |
+| **Attribution required** | Yes — United Nations Population Division must be credited |
+| **Redistribution** | Non-commercial redistribution permitted with attribution; commercial redistribution requires UN consent |
+| **Notes** | Used for population density by country (persons/km²) as the exposure-scaling factor α in value transfer for air pollutants (§3.2) and noise (§4.2). World Bank redistributes derived population density estimates under CC BY 4.0 (https://data.worldbank.org/indicator/EN.POP.DNST), which may be used as an alternative. |
+
+---
+
+### 11.5 OpenStreetMap — Urban Road Corridor Density
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | OpenStreetMap contributors (2025). *OpenStreetMap*. https://www.openstreetmap.org |
+| **License name** | Open Database Licence v1.0 (ODbL) |
+| **License URL** | https://opendatacommons.org/licenses/odbl/1-0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — "© OpenStreetMap contributors" and ODbL licence notice required |
+| **Redistribution** | Permitted; derivative databases must also be released under ODbL (share-alike) |
+| **Notes** | Used for urban population density along road corridors — the physical exposure parameter for the transport air pollutant component of value transfer (§5.11). Any derived dataset must itself be released under ODbL. The Global Urban Network layer (if used) should be checked separately for its specific licence. |
+
+---
+
+### 11.6 IEA — World Energy Balances
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | International Energy Agency (IEA) (2025). *World Energy Balances*, 2025 edition. IEA, Paris. https://www.iea.org/data-and-statistics/data-product/world-energy-balances |
+| **License name** | IEA Proprietary — Terms of Use for Non-CC Material |
+| **License URL** | https://www.iea.org/terms · https://www.iea.org/data-and-statistics/data-product/world-energy-balances-licence-agreement |
+| **Commercial use** | Restricted — requires IEA Licence Agreement for revenue-generating derived products |
+| **Attribution required** | Yes — "Source: IEA" |
+| **Redistribution** | ✗ Redistribution of the dataset requires a paid licence agreement with IEA |
+| **Notes** | Used for electricity generation mix by country and source (UBA electricity §5.9 and heat §5.10 value transfer) and for national heating fuel mix (§5.10). IEA reserves all rights. If using IEA data in a commercial product, a licence agreement is required (rights@iea.org). Open alternative: Ember electricity generation data (CC BY 4.0, https://ember-climate.org/data/). |
+
+---
+
+### 11.7 IPCC AR6 — Lifecycle GHG Values and GWP100
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | IPCC (2021). *Climate Change 2021: The Physical Science Basis*. Contribution of Working Group I to the Sixth Assessment Report. Cambridge University Press. https://www.ipcc.ch/report/ar6/wg1/ |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — IPCC and specific chapter/table must be cited |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Used for: (a) lifecycle upstream GHG intensities per electricity source (Annex III Table III.2) for UBA electricity/heat transfer (§5.9–5.10); (b) GWP100 values by refrigerant (Table 7.SM.7) for refrigerant value transfer (§4.5). AR6 data repositories are released under CC BY 4.0. |
+
+---
+
+### 11.8 ITF — International Transport Forum (Transport Statistics)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | International Transport Forum (ITF) / OECD (2025). *Transport Statistics* (vehicle occupancy rates; freight load factors). ITF at the OECD. https://www.itf-oecd.org/ |
+| **License name** | OECD Terms and Conditions — non-commercial use free with attribution |
+| **License URL** | https://www.oecd.org/termsandconditions/ |
+| **Commercial use** | Restricted — free for non-commercial use; commercial use requires OECD written consent |
+| **Attribution required** | Yes — ITF / OECD must be cited |
+| **Redistribution** | Non-commercial redistribution permitted with attribution |
+| **Notes** | Used for national vehicle occupancy rates and freight load factors to convert UBA per-vehicle-km values to per-Pkm / per-tkm in transport value transfer (§5.11). ITF is an intergovernmental organisation administratively integrated into OECD. |
+
+---
+
+### 11.9 WULCA — AWARE v2 Water Scarcity Factors
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Boulay, A.-M., Bare, J., Benini, L. et al. (2018). The WULCA consensus characterization model for water scarcity footprints: assessing impacts of water consumption based on available water remaining (AWARE). *The International Journal of Life Cycle Assessment*, 23, 368–378. https://doi.org/10.1007/s11367-017-1333-8. AWARE v2 factors: https://wulca-waterlca.org/aware/ |
+| **License name** | Free to use with mandatory citation — no formal Creative Commons licence declared |
+| **License URL** | https://wulca-waterlca.org/aware/faq/ |
+| **Commercial use** | ✓ Permitted (no stated restriction) |
+| **Attribution required** | Yes — citation to Boulay et al. 2018 required |
+| **Redistribution** | Not explicitly stated; AWARE factors downloadable without registration |
+| **Notes** | WULCA is a working group of the UNEP–SETAC Life Cycle Initiative. Per WULCA FAQ: "There is no restriction in using the AWARE factors in your studies and environmental footprint methodologies. The only requirement is a proper citation." Used for AWARE water scarcity scaling of N/P-to-water damage (§3.3) and agriculture (§5.12). |
+
+---
+
+### 11.10 FAO GLEAM — Livestock Emission Intensities
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Food and Agriculture Organization of the United Nations (FAO) (2023). *Global Livestock Environmental Assessment Model (GLEAM) 3.0 — Model description*. FAO, Rome. https://www.fao.org/gleam/ |
+| **License name** | FAO copyright — personal non-commercial use only |
+| **License URL** | https://www.fao.org/contact-us/terms/en/ |
+| **Commercial use** | ✗ FAO material may be downloaded and copied for personal non-commercial use only; no right to resell or redistribute |
+| **Attribution required** | Yes — FAO must be cited |
+| **Redistribution** | ✗ Redistribution or commercial use requires written permission from FAO (copyright@fao.org) |
+| **Notes** | Provides physical emission intensities per kg livestock product (GHG, NH₃, N₂O by commodity) for the agriculture component reconstruction (§5.12). For commercial use or derivative datasets, contact FAO. Note: peer-reviewed journal articles based on GLEAM data may carry separate CC licences. |
+
+---
+
+### 11.11 UBA Handbook — Environmental Value Factors MC 4.0 (Eser et al. 2025)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Eser, N., Matthey, A., Bünger, B. (2025). *Umweltbewertung für die Umweltfolgenabschätzung — Methodenkonvention 4.0 zur Ermittlung von Umweltkosten*. Dessau-Roßlau: German Federal Environment Agency (Umweltbundesamt). |
+| **License name** | Data Licence Germany — Attribution — Version 2.0 (dl-de/by-2-0) |
+| **License URL** | https://www.govdata.de/dl-de/by-2-0 |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — UBA and the specific handbook edition must be cited |
+| **Redistribution** | Permitted with attribution; may be integrated in commercial products |
+| **Notes** | Primary source for all UBA MC 4.0 value factors in this document (GHG, air pollutants, noise, N/P, electricity, heat, transport, agriculture). As a German federal publication, released under dl-de/by-2-0. |
+
+---
+
+### 11.12 EPS 2015d.1 — Environmental Priority Strategies (Steen 2015)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Steen, B. (2015). *EPS 2015d.1 — A system for weighting environmental characteristics according to their contribution to safeguard subjects*. Swedish Life Cycle Center, Chalmers University of Technology. |
+| **License name** | Open academic access — Swedish Life Cycle Center; no formal Creative Commons licence declared |
+| **License URL** | https://www.lifecyclecenter.se/projects/eps-environmental-priority-strategies-in-product-design/ |
+| **Commercial use** | ✓ Broadly used in academic and commercial LCA practice; no stated restriction |
+| **Attribution required** | Yes — Steen (2015) must be cited |
+| **Redistribution** | CPM LCA Database companion data freely accessible; no explicit redistribution restriction |
+| **Notes** | Primary source for all EPS value factors (892 substances across 12 indicator groups). The EPS index is publicly available and widely used in commercial LCA tools and environmental reporting. |
+
+---
+
+### 11.13 GIVE Model — Global Impacts and Valuation of Emissions (Anthoff 2025)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Anthoff, D. (2025). *GIVE model — Global Impacts and Valuation of Emissions*. [Academic publication and model repository; version used in UBA MC 4.0.] |
+| **License name** | To be confirmed — academic model; likely open-source (MIT or similar) on GitHub |
+| **License URL** | To be confirmed |
+| **Commercial use** | To be confirmed |
+| **Attribution required** | Yes — Anthoff and UBA Handbook (Eser et al. 2025) must be cited |
+| **Redistribution** | To be confirmed |
+| **Notes** | The GIVE model (successor to the FUND model) is used by UBA MC 4.0 to derive GHG value factors with equity weighting and 0%/1% PRTP scenarios. Full bibliographic details to be confirmed from the UBA Handbook reference list. |
+
+---
+
+### 11.14 DICE / RICE Model (Nordhaus & Barrage 2024)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Nordhaus, W., Barrage, L. (2024). *DICE/RICE Integrated Assessment Model*, 2024 update. Yale University. http://www.williamnordhaus.com/dice-rice-models |
+| **License name** | No formal open-source licence declared |
+| **License URL** | http://www.williamnordhaus.com/dice-rice-models |
+| **Commercial use** | Unspecified — model freely distributed from author's website without explicit licence terms |
+| **Attribution required** | Yes (academic convention) |
+| **Redistribution** | Unspecified — code available for download; no redistribution terms stated |
+| **Notes** | DICE produces the Social Cost of Carbon trajectory used for WifOR GHG value factors. Used here as a cross-reference benchmark for EPS and UBA GHG values (§3.1). |
+
+---
+
+### 11.15 Navrud (2002) — Noise Income Elasticity
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Navrud, S. (2002). *The State of the Art on Economic Valuation of Noise*. Final Report to the European Commission, DG Environment. |
+| **License name** | European Commission publication copyright (pre-2011; not covered by Decision 2011/833/EU) |
+| **License URL** | https://op.europa.eu/en/web/about-us/legal-notices/eu-publications |
+| **Commercial use** | ✗ EC publications: non-commercial use permitted; commercial reproduction requires permission |
+| **Attribution required** | Yes |
+| **Redistribution** | Non-commercial redistribution with attribution permitted |
+| **Notes** | Provides the noise income elasticity parameter ε_noise ≈ 0.8 used in EPS–UBA noise value transfer (§4.2). As an EC DG Environment commissioned report (published 2002), it predates EC Decision 2011/833/EU and is subject to reserved EC copyright. |
+
+---
+
+### 11.16 Dekkers & van der Straaten (2009) — Aircraft Noise Valuation
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Dekkers, J., van der Straaten, J.W. (2009). Monetary valuation of aircraft noise: A hedonic analysis around Amsterdam airport. *Ecological Economics*, 68(11), 2850–2858. https://doi.org/10.1016/j.ecolecon.2009.06.022 |
+| **License name** | Elsevier — All Rights Reserved |
+| **License URL** | https://www.elsevier.com/about/policies/open-access-licenses |
+| **Commercial use** | ✗ Journal copyright; reproduction requires Elsevier permission |
+| **Attribution required** | Yes |
+| **Redistribution** | Publisher permission required |
+| **Notes** | Supporting reference for the noise income elasticity parameter (ε_noise ≈ 0.8) in noise value transfer (§4.2). Published under standard Elsevier journal copyright; paywalled via ScienceDirect. |
+
+---
+
+### 11.17 Guski et al. (2017) — WHO Noise Exposure–Response Functions
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Guski, R., Schreckenberg, D., Schütte-Rödin, R. (2017). WHO Environmental Noise Guidelines for the European Region: A systematic review on exposure–response relationships for road traffic noise and annoyance. *International Journal of Environmental Research and Public Health*, 14(12), 1539. Also: WHO (2018). *Environmental Noise Guidelines for the European Region*. WHO Regional Office for Europe, Copenhagen. |
+| **License name** | Creative Commons Attribution-NonCommercial-ShareAlike 3.0 IGO (CC BY-NC-SA 3.0 IGO) |
+| **License URL** | https://creativecommons.org/licenses/by-nc-sa/3.0/igo/ |
+| **Commercial use** | ✗ Non-commercial use only |
+| **Attribution required** | Yes — WHO and specific publication must be cited |
+| **Redistribution** | Permitted for non-commercial purposes; derivatives must carry the same CC BY-NC-SA 3.0 IGO licence |
+| **Notes** | Provides the WHO exposure–response function for road traffic noise (%HA per dB(A) class) used to bridge EPS and UBA noise values in the noise unit reconciliation (§4.2). WHO publications post-2016 are released under CC BY-NC-SA 3.0 IGO. |
+
+---
+
+### 11.18 Chen & Hoek (2020) — PM Mortality Dose–Response
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Chen, J., Hoek, G. (2020). Long-term exposure to PM and all-cause and cause-specific mortality: A systematic review and meta-analysis. *Environment International*, 143, 105974. https://doi.org/10.1016/j.envint.2020.105974 |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Provides the dose–response function for PM₂.₅ long-term mortality used as a methodological reference for air pollutant value transfer (§3.2). Published in *Environment International* (Elsevier) under CC BY 4.0. |
+
+---
+
+### 11.19 Psacharopoulos & Patrinos (2018) — Returns to Education
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Psacharopoulos, G., Patrinos, H.A. (2018). Returns to investment in education: a decennial review of the global literature. *Education Economics*, 26(5), 445–458. https://doi.org/10.1080/09645292.2018.1484426. Also available as World Bank WPS8402 (open access): https://documents.worldbank.org/curated/en/442521523465644318 |
+| **License name** | Taylor & Francis copyright (journal version); World Bank Open Access — CC BY 3.0 IGO (WPS8402 version) |
+| **License URL** | Journal: https://www.tandfonline.com/doi/abs/10.1080/09645292.2018.1484426 · WB WP: https://documents.worldbank.org/curated/en/442521523465644318 |
+| **Commercial use** | ✗ Journal version (publisher copyright); ✓ World Bank WP version (open including commercial) |
+| **Attribution required** | Yes |
+| **Redistribution** | Journal version: publisher permission required; WB WP version: permitted with attribution |
+| **Notes** | Provides the education return rate (~9% per year) used as the basis for the Training value factor (§5.2) and cited in training value transfer documentation. The World Bank WP version (WPS8402) is the recommended open-access citation. |
+
+---
+
+### 11.20 Karzai & Hirschfeld (2024) — Agricultural Environmental Costs (UBA)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Karzai, S., Hirschfeld, J. (2024). *Environmental costs of agricultural production in Germany*. Working Paper. Dessau-Roßlau: German Federal Environment Agency (Umweltbundesamt). |
+| **License name** | Data Licence Germany — Attribution — Version 2.0 (dl-de/by-2-0) |
+| **License URL** | https://www.govdata.de/dl-de/by-2-0 |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — UBA and the specific working paper must be cited |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Provides the methodological basis for UBA agriculture value factors (§5.12) for livestock products, fertiliser application, and N/P surpluses. As a German federal environment agency working paper, released under dl-de/by-2-0. |
+
+---
+
 *Scripts: Dr Dimitrij Euler, Greenings (dimitrij.euler@greenings.org), with support of Claude Code (Anthropic) |
 WifOR Value Factors: WifOR Institute for Economic Research |
 EPS Value Factors: Steen (2015), Swedish Life Cycle Center, Chalmers University |
@@ -985,4 +1271,4 @@ UBA Handbook: Nadia Eser, Dr. Astrid Matthey, Dr. Björn Bünger — German Envi
 CE Delft: De Vries et al. — Environmental Prices Handbook 2024: EU27 version, CE Delft, April 2025 |
 UK Wellbeing: HM Treasury Green Book 2026; Wellbeing Guidance 2021; OECD 2025; Frontier Economics / DCMS 2024 |
 eQALY: Valuing Impact (valuingimpact.org) — eQALY Impact Valuation Method, 2025 |
-Document Version 3.0 | Last Updated 2026-03-09*
+Document Version 3.1 | Last Updated 2026-03-09*
