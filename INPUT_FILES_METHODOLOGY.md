@@ -1,10 +1,10 @@
 # Input Files Methodology and Data Origins
 
-**WifOR Value Factors - Data Provenance Documentation**
-**Version**: 1.0
-**Last Updated**: 2026-01-02
+**All Six Value Factor Systems — Input Files and Data Provenance**
+**Version**: 2.0
+**Last Updated**: 2026-03-09
 
-This document provides comprehensive documentation of input files used within the WifOR Impact Valuation framework, detailing their origins, underlying methodologies, and the processes used to generate the data.
+This document provides comprehensive documentation of input files and primary data sources used across all six value factor systems in the transitionvaluation framework (WifOR, EPS 2015d.1, UBA MC 4.0, CE Delft 2024, UK Wellbeing, eQALY). For each indicator a cross-system overview table is provided; detailed WifOR-specific methodology follows. Detailed input file documentation for CE Delft, UK Wellbeing, and eQALY is maintained in their respective submodule `INPUT_FILES_METHODOLOGY.md` files.
 
 ---
 
@@ -15,7 +15,7 @@ This document provides comprehensive documentation of input files used within th
 3. [General Framework](#general-framework)
 4. [Shared Input Files](#shared-input-files)
 5. [Indicator-Specific Input Files](#indicator-specific-input-files)
-6. [Public Data Sources](#public-data-sources)
+6. [External Sources and License Information](#external-sources-and-license-information)
 
 ---
 
@@ -242,10 +242,38 @@ coefficient[year] = coefficient[base] × inflation_factor[year]
 
 ## Indicator-Specific Input Files
 
+This section documents input files and primary data sources for all six value factor systems. For each indicator a **Cross-System Input Sources** table appears first, followed by the detailed WifOR-specific file documentation.
+
+### System Coverage Overview
+
+| System | Folder | Indicators covered | Primary source |
+|--------|--------|--------------------|----------------|
+| **WifOR** | `value-factors/` | GHG, Air, Waste, Water consumption, Land use, Water pollution, Training, OHS | DICE/RICE; UBA/NEEDS; EPS/LANCA; USEtox; Psacharopoulos 2018; IHME GBD |
+| **EPS 2015d.1** | `stockholm-value-factors/` | GHG, Air, N/P water, Waste, Land use, Heavy metals, Refrigerants, Noise, VOCs, Fossil resources, Radionuclides, Pesticides, Critical minerals | EPS 2015d.1 index (Steen 2015); 892 substances |
+| **UBA MC 4.0** | `uba-value-factors/` | GHG, Air, Noise, N/P water, Refrigerants, Electricity, Heat, Transport, Agriculture | GIVE model (Anthoff 2025); EcoSenseWeb v1.3; UBA Handbook Tables 1–27 (Eser et al. 2025) |
+| **CE Delft 2024** | `cedelft-value-factors/` | GHG, Air, N/P water, Land use, Heavy metals, Fossil ADP, Radionuclides, Critical minerals | Environmental Prices Handbook EU27 (De Vries et al. 2025) |
+| **UK Wellbeing** | `uk-value-factors/` | WELLBY/QALY, Discount rates, Cultural engagement health | HM Treasury Green Book 2026; NICE HTA; Wellbeing Guidance 2021 |
+| **eQALY** | `valuingimpact-value-factors/` | GHG (NatCap), Air (NatCap), N/P water (NatCap), Land use (LANCA), Water consumption, Training, OHS, Health DALY rates, HUI, HUT | IHME GBD 2019; World Bank; IMF WEO; LANCA v2.0; HUI/HUT welfare model |
+
+---
+
 ### 1. Greenhouse Gas Emissions (GHG)
 
 **File**: `20241022_scc_nordhaus.h5`
 **Script**: `020_241024_prepare_GHG_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `20241022_scc_nordhaus.h5` | DICE/RICE (Nordhaus & Barrage 2024) — integrated assessment model; global SCC trajectory | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `001_inorganic_gases` (Steen 2015) | Climate damage pathway via YOLL (50,000 ELU/person-year) + crop + fish + coastal | EUR 2015 |
+| **UBA MC 4.0** | GIVE model (Anthoff 2025) → *UBA Handbook Table 1* (Eser et al. 2025) | Equity-weighted global SCC; 0 % and 1 % PRTP; direct CH₄/N₂O modelling (not GWP100 proxies) | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) | Literature-based SCC; CO₂, CH₄, N₂O | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap GHG pathway; IHME GBD 2019 burden data | Income-utility–weighted climate damage | USD 2023 |
+
+*WifOR-specific methodology below. For UBA MC 4.0: the GIVE (Global Impacts and Valuation of Emissions) model replaces DICE; it applies equity-weighting with German income as reference and provides two PRTP scenarios.*
 
 #### Origin
 - **Source**: DICE Model (Dynamic Integrated Climate-Economy)
@@ -303,6 +331,17 @@ After conversion and inflation:
 
 **File**: `220707_Air pollution_update.xlsx`
 **Script**: `008_241001_prepare_AirPollution_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220707_Air pollution_update.xlsx` | UBA/NEEDS methodology (EcoSenseWeb); income-elasticity VFT; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `001_inorganic_gases` + `002_particles` (Steen 2015) | YOLL pathway + crop + biodiversity + materials; Swedish income anchor | EUR 2015 |
+| **UBA MC 4.0** | EcoSenseWeb v1.3 → *UBA Handbook Tables 2–4* (Eser et al. 2025) | German receptor data; three context tiers (unknown source, combustion, road traffic) | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) | Impact pathway approach (IPA); EU27 average receptor data | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap air pathway; IHME GBD 2019 + Chen & Hoek 2020 dose-response | Income-utility–weighted health damage; LANCA exposure scaling | USD 2023 |
 
 #### Origin
 - **Primary Source**: German Federal Environment Agency (UBA) methodology
@@ -423,6 +462,17 @@ India (GDP per capita ~$2k, elasticity 1.0): USD 100 × (2/50)^1.0 = USD 4/kg
 **File**: `220509_Waste figures merged_update.xlsx`
 **Script**: `007_241001_prepare_Waste_my.py`
 
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220509_Waste figures merged_update.xlsx` | IPCC landfill GHG + EXIOPOL accounts + PwC disamenity + HARAS leachate model; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `012_waste` (Steen 2015) | Plastic litter to ground and water only; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
 #### Origin
 - **Mixed Sources**:
   - IPCC (greenhouse gas emissions)
@@ -490,6 +540,17 @@ Columns: country_code, costs (USD/kg)
 **File**: `220511_Water consumption_update.xlsx`
 **Script**: `009_241001_prepare_WaterConsumption_my.py`
 
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220511_Water consumption_update.xlsx` | Ligthart & van Harmelen 2019 (economic damage) + Debarre et al. 2022 (DALY health damage) + WULCA AWARE scarcity scaling; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap water consumption pathway; IHME 2019 + WULCA AWARE + income utility | Country-specific via AWARE scarcity + income elasticity | USD 2023 |
+
 #### Origin
 - **Academic Research**:
   - Ligthart & van Harmelen (2019)
@@ -549,6 +610,17 @@ Note: Total damages = Economic + Health
 
 **File**: `230317_Landuse_update_ZK.xlsx`
 **Script**: `010_241001_prepare_LandUse_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `230317_Landuse_update_ZK.xlsx` | EPS 2015d.1 ecosystem service monetisation + LANCA v2.5 country characterisation; 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `009_land_use` (23 land types; Steen 2015) | Five pathways: climate, crop, wood, water regulation, biodiversity (NEX); Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | — not covered (explicitly excluded from MC 4.0; no standalone land-use VF recommended) | — | — |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 6 land use | Ecosystem service loss; EU27 average | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | LANCA v2.0 (Fraunhofer IBP); HUT global average (0.7581) welfare multiplier | Ecosystem service value × HUT social return | USD 2023 |
 
 #### Origin
 - **Primary Framework**: Environmental Priority Strategies (EPS)
@@ -621,6 +693,17 @@ Each column contains damage cost (USD/ha)
 
 **File**: `230324_WaterPollution_Mon_Coef_Final_DC.xlsx`
 **Script**: `013_241014_prepare_WaterPol_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `230324_WaterPollution_Mon_Coef_Final_DC.xlsx` | Steen 2020 (N, P nutrients via eutrophication pathway) + USEtox model (9 heavy metals); PPP value transfer from Ahlroth 2009 (Sweden base); 188 countries | USD (mixed) |
+| **EPS 2015d.1** | EPS 2015d.1 index — `005_emissions_to_water` (Steen 2015) | Eutrophication via oxygen deficiency + fish/biodiversity/drinking water pathways; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | EcoSenseWeb + limiting-substance model → *UBA Handbook Tables 22–24* (Eser et al. 2025) | Conservative lower bound: only limiting nutrient (N or P) charged; air N valued via health pathway | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Tables 1–2 (N, P) and Tables 3–5 (heavy metals to air, water, soil) | IPA; EU27 average | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | NatCap water pollution pathway; LANCA v2.0 + income utility | Country-specific via LANCA characterisation + income elasticity | USD 2023 |
 
 #### Origin
 - **Methodology**:
@@ -726,6 +809,17 @@ Column: Value (damage cost in USD/kg)
 
 **File**: `220529_training_value_per_hour_bysector.h5`
 **Script**: `014_241016_prepare_Training_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220529_training_value_per_hour_bysector.h5` | Psacharopoulos & Patrinos 2018 returns to education (~9%/year); PPP + GVA sector adjustment; 188 countries × 21 NACE sectors | USD 2020 |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | Wages × HUI welfare multiplier; sector-specific GVA data; World Bank income data | Human capital benefit monetised via health utility of income | USD 2023 |
 
 #### Origin
 - **Theoretical Foundation**: Returns to schooling research
@@ -845,6 +939,17 @@ Construction Sector (lower skill premium):
 
 **File**: `220616_monetization_value_per_incident_NEW.xlsx`
 **Script**: `015_241016_prepare_OHS_my.py`
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | `220616_monetization_value_per_incident_NEW.xlsx` | IHME GBD 2019 disability weights + Eurostat incident rates; global USD 200,000/DALY (uniform); 188 countries | USD (mixed) |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | IHME GBD 2019 DALY rates (occupational + WASH + dietary risk factors) × income utility (HUI); 188 countries | Country-specific DALY monetisation via HUI welfare multiplier | USD 2023 |
 
 #### Origin
 - **Methodology**: Health economics (DALY approach)
@@ -984,84 +1089,447 @@ Income-Adjusted Alternative:
 
 ---
 
-## Public Data Sources
+### 9. Noise
 
-### Comprehensive List
+*Not covered by WifOR. Primary systems: EPS 2015d.1, UBA MC 4.0.*
 
-#### International Organizations
+#### Cross-System Input Sources
 
-**World Bank**
-- GDP Deflators
-- Economic indicators
-- https://data.worldbank.org
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | EPS 2015d.1 index — `007_noise` (Steen 2015) | Road traffic; sleep disturbance → YOLL pathway; dB level converted via WHO exposure-response; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | EcoSenseWeb + health valuation → *UBA Handbook Tables 19–20* (Eser et al. 2025) | Road, rail, and air traffic noise; annoyance + cognitive impairment in children; per dB(A) class; German receptor data | EUR 2025 |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
 
-**OECD**
-- Waste statistics
-- Water data
-- Education data
-- https://stats.oecd.org
+**Key inputs for UBA noise (Tables 19–20):**
+- WHO exposure–response functions (Guski et al. 2017) — % highly annoyed by dB(A) class
+- EcoSenseWeb receptor density data — German population along road/rail/flight corridors
+- Health valuation: VOLY (Value of a Life Year) from meta-analysis; German income anchor
 
-**WHO (World Health Organization)**
-- Life expectancy
-- Health burden data
-- https://www.who.int/data
+---
 
-**IPCC (Intergovernmental Panel on Climate Change)**
-- Emission factors
-- Climate data
-- https://www.ipcc-nggip.iges.or.jp
+### 10. Halogenated Compounds and Refrigerants
 
-#### Regional Agencies
+*Not covered by WifOR. Primary systems: EPS 2015d.1 (283 substances), UBA MC 4.0 (8 refrigerants), CE Delft 2024 (CFC-11 equivalent).*
 
-**UBA (German Federal Environment Agency)**
-- Air pollution methodology
-- Environmental damage costs
-- https://www.probas.umweltbundesamt.de/
+#### Cross-System Input Sources
 
-**Eurostat**
-- Occupational safety data
-- European statistics
-- https://ec.europa.eu/eurostat
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | EPS 2015d.1 index — `004_halogenated_organics` (Steen 2015); 283 substances | Climate change + ozone depletion + human toxicity pathways; Swedish anchor | EUR 2015 |
+| **UBA MC 4.0** | GIVE model GWP100 × CO₂ VF → *UBA Handbook Table 7* (Eser et al. 2025); 8 refrigerants | Climate pathway only (GWP100 × UBA CO₂ VF); R-32, R-410A, R-134a, R-507A, R-717, R-290, and others | EUR 2025 |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 3 | CFC-11 equivalent; climate via SCC | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
 
-#### Research Projects
+**Key inputs for UBA refrigerants:** IPCC AR6 Table 7.SM.7 GWP100 values per refrigerant × UBA CO₂ VF from Table 1.
 
-**NEEDS (EU Project)**
-- External cost database
-- https://cordis.europa.eu/project/id/502687
+---
 
-**EXIOBASE**
-- Environmentally-extended input-output database
-- https://www.exiobase.eu/
+### 11. Electricity — Life-Cycle VF per kWh by Source
 
-**USEtox**
-- Chemical toxicity model
-- https://usetox.org
+*Unique to UBA MC 4.0.*
 
-**AWARE**
-- Water scarcity indicators
-- https://wulca-waterlca.org/aware/
+#### Cross-System Input Sources
 
-**EPS (Environmental Priority Strategies)**
-- Ecosystem valuation
-- https://lifecyclecenter.se/projects/eps
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered as per-kWh electricity VF (fossil resource depletion in §5.15) | — | — |
+| **UBA MC 4.0** | LCA inventory + EcoSenseWeb + GIVE → *UBA Handbook Table 5* (Eser et al. 2025) | Life-cycle GHG + air pollutants per kWh per source; German grid losses and receptor data; 9 electricity sources | EUR-cent 2025/kWh |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
 
-**LANCA**
-- Land use characterization
-- https://www.ibp.fraunhofer.de/en/expertise/life-cycle-engineering/applied-methods/lanca.html
+**UBA electricity sources (Table 5):** German mix, lignite, hard coal, natural gas, nuclear, wind onshore/offshore, solar PV, hydro, biomass.
 
-#### Academic Resources
+---
 
-**DICE Model (Nordhaus)**
-- Social Cost of Carbon
-- http://www.williamnordhaus.com/dice-rice-models
+### 12. Heat Generation — Life-Cycle VF per kWh by Source
 
-**Global Burden of Disease**
-- Disability weights
-- https://www.healthdata.org/gbd
+*Unique to UBA MC 4.0.*
 
-**Returns to Education Research**
-- Psacharopoulos & Patrinos (2018)
-- Available through OECD and academic databases
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | LCA inventory + EcoSenseWeb + GIVE → *UBA Handbook Table 6* (Eser et al. 2025) | Life-cycle GHG + AP per kWh final energy; 7 heat sources; German receptor data | EUR-cent 2025/kWh |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**UBA heat sources (Table 6):** Natural gas, heating oil, hard coal, lignite, biomass, solar thermal, heat pumps (COP-adjusted).
+
+---
+
+### 13. Transport — per Vehicle-km and per Pkm/tkm
+
+*Unique to UBA MC 4.0.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | LCA inventory + EcoSenseWeb + GIVE + infrastructure data → *UBA Handbook Tables 9–18* (Eser et al. 2025) | Cars, vans, heavy-duty trucks, buses, rail, air, ship; GHG + AP exhaust + AP abrasion + infrastructure + energy supply | EUR 2025/veh-km; EUR 2025/Pkm or tkm |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**UBA transport tables:** Tables 9–16 (per vehicle-km by vehicle type and fuel); Tables 17–18 (per Pkm/tkm using ITF occupancy and load factors).
+
+---
+
+### 14. Agriculture — per kg Product and per kg Nutrient Surplus
+
+*Primary system: UBA MC 4.0. CE Delft covers abiotic depletion only.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered (N/P nutrients partially in §5.6 Water Pollution) | — | — |
+| **EPS 2015d.1** | — not covered as per-product VF | — | — |
+| **UBA MC 4.0** | IPCC Tier 2 emission factors + EcoSenseWeb + Karzai & Hirschfeld 2024 → *UBA Handbook Tables 25–27* (Eser et al. 2025) | Milk, beef, pork, poultry, eggs; N fertiliser; N/P surpluses; GHG + NH₃ + N pathways | EUR 2025/kg product |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 7 (fossil ADP, minerals) | Abiotic resource depletion for agricultural inputs only | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+**UBA agriculture key inputs:** IPCC Tier 2 livestock emission factors; FAO GLEAM GHG intensities; EcoSenseWeb for NH₃ health impacts; N/P to water via UBA Tables 22–24 limiting-substance approach.
+
+---
+
+### 15. Fossil Resource Depletion
+
+*Not covered by WifOR or UBA as standalone. Primary systems: EPS 2015d.1, CE Delft 2024.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | EPS 2015d.1 index — `010_fossil_resources` (Steen 2015); fossil oil, coal, lignite, natural gas | Future extraction cost increase + energy substitution cost; globally anchored, Swedish income | EUR 2015 |
+| **UBA MC 4.0** | — not covered as standalone; embedded within electricity, heat, and transport life-cycle VFs | — | — |
+| **CE Delft 2024** | *Environmental Prices Handbook EU27* (De Vries et al. 2025) — Table 7 (fossil ADP) | Abiotic depletion potential method; globally uniform | EUR 2021 |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | — not covered | — | — |
+
+---
+
+### 16. WELLBY / QALY Unit Value and Discount Rates
+
+*Unique to UK Wellbeing system.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | HM Treasury Green Book 2026 (GBP 70,000/QALY); NICE HTA (GBP 20,000–30,000/QALY); Frontier Economics / DCMS Wellbeing Guidance 2021 (GBP 13,000/WELLBY); OECD 2025 geographic transfer guidance | WELLBY = midpoint of QALY-income anchor and QALY-value anchor; temporal uprating by GDP deflator × per-capita growth^1.3 | GBP 2019/2024 |
+| **eQALY** | IHME GBD 2019 + World Bank GDP per capita + IMF WEO deflators → HUI (health utility of income) | Endogenous country-specific welfare multiplier on income impacts | USD 2023 |
+
+**Key UK input files:** `01_wellby_valuations.xlsx` (WELLBY, QALY); `05_discount_rates.xlsx` (STPR 3.5%; health rate 1.5%); `04_cultural_engagement.xlsx` (GBP 122–1,310/person/yr).
+
+---
+
+### 17. HUI and HUT — Health Utility Welfare Multipliers
+
+*Unique to eQALY system.*
+
+#### Cross-System Input Sources
+
+| System | Primary Input / Handbook Reference | Model / Methodology | Price Base |
+|--------|------------------------------------|---------------------|------------|
+| **WifOR** | — not covered | — | — |
+| **EPS 2015d.1** | — not covered | — | — |
+| **UBA MC 4.0** | — not covered | — | — |
+| **CE Delft 2024** | — not covered | — | — |
+| **UK Wellbeing** | — not covered | — | — |
+| **eQALY** | IHME GBD 2019 health burden data + World Bank GDP per capita PPP + IMF WEO deflators → `01_hui_output.h5` / `02_hut_output.h5` | HUI (health utility of income): converts monetary income impact to welfare equivalent per country. HUT (health utility of taxes): social return on public investment (SROI). | USD 2023 |
+
+**HUI application:** applied as country-specific multiplier on all income-generating indicators (Training, wages). **HUT application:** global average (0.7581) scales LANCA ecosystem values; country-specific HUT scales public revenue impacts.
+
+---
+
+## 6. External Sources and License Information
+
+This section documents each external source used across all WifOR indicator scripts. Each entry provides the full citation, verified license terms, and conditions for commercial use and redistribution.
+
+---
+
+### 6.1 World Bank Open Data — GDP Deflators
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | World Bank (2024). *World Development Indicators*: NY.GDP.DEFL.ZS — GDP deflator (base year varies by country). The World Bank Group, Washington DC. https://data.worldbank.org |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — "Source: World Bank, World Development Indicators" |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Used for temporal deflation (converting coefficients to constant base-year USD) in all 8 WifOR indicator scripts. Data accessible via the `wbdata` Python library or the World Bank Data API. |
+
+---
+
+### 6.2 DICE / RICE Model — Social Cost of Carbon (GHG)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Nordhaus, W., Barrage, L. (2024). *DICE/RICE Integrated Assessment Model*, 2024 update. Yale University. http://www.williamnordhaus.com/dice-rice-models |
+| **License name** | No formal open-source licence declared |
+| **License URL** | http://www.williamnordhaus.com/dice-rice-models |
+| **Commercial use** | Unspecified — model freely distributed from author's website without explicit licence terms |
+| **Attribution required** | Yes (academic convention) |
+| **Redistribution** | Unspecified — code available for download; no redistribution terms stated |
+| **Notes** | The DICE model (originally DICE123, 1991) has been openly distributed since its inception. The 2024 Barrage–Nordhaus update is provided in GAMS/Excel format without a formal open-source licence. Open-source re-implementations in Julia, R, and Python exist under MIT/Apache licences on GitHub. The DICE SCC trajectory forms the basis for the GHG value factor. |
+
+---
+
+### 6.3 UBA / ProBas — Air Pollution Damage Costs
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | German Federal Environment Agency (Umweltbundesamt — UBA). *ProBas: Prozessorientierte Basisdaten für Umweltmanagement-Instrumente*. https://www.probas.umweltbundesamt.de/ |
+| **License name** | Data Licence Germany — Attribution — Version 2.0 (dl-de/by-2-0) |
+| **License URL** | https://www.govdata.de/dl-de/by-2-0 |
+| **Commercial use** | ✓ Permitted — data may be integrated in commercial products |
+| **Attribution required** | Yes — Umweltbundesamt (UBA) must be cited |
+| **Redistribution** | Permitted; data may be merged and redistributed with attribution |
+| **Notes** | UBA publishes all publicly available governmental data under Data Licence Germany 2.0 (dl-de/by-2-0) by default. ProBas freely provides >20,000 process-level LCI datasets. The air pollution damage cost methodology (VOLY, VSL, exposure-response functions) is based on the EcoSenseWeb model, developed in the NEEDS EU project (§6.4). |
+
+---
+
+### 6.4 NEEDS EU Project — External Cost Database (Air Pollution)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | New Energy Externalities Development for Sustainability (NEEDS). *FP6 Integrated Project 502687*. European Commission, 2004–2008. https://cordis.europa.eu/project/id/502687 |
+| **License name** | European Union publication copyright |
+| **License URL** | https://op.europa.eu/en/web/about-us/legal-notices/eu-publications |
+| **Commercial use** | ✗ Not for commercial resale without permission; available for research and policy use |
+| **Attribution required** | Yes |
+| **Redistribution** | Non-commercial redistribution with attribution permitted |
+| **Notes** | The NEEDS project developed the EcoSense external cost model and a comprehensive European air pollution externality database used by UBA and WifOR. Project deliverables are publicly accessible via CORDIS and openLCA (https://www.openlca.org/project/needs/). Pre-2011 EC-funded publications are not covered by EC Decision 2011/833/EU. |
+
+---
+
+### 6.5 IPCC — Emission Factors for Waste GHG
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | IPCC (2006). *2006 IPCC Guidelines for National Greenhouse Gas Inventories*. IPCC National Greenhouse Gas Inventories Programme. https://www.ipcc-nggip.iges.or.jp/EFDB/main.php |
+| **License name** | Creative Commons Attribution 3.0 IGO (CC BY 3.0 IGO) |
+| **License URL** | https://creativecommons.org/licenses/by/3.0/igo/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — IPCC must be cited |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | The IPCC Guidelines provide methane emission factors for landfill decomposition and incineration processes used in the Waste Management indicator GHG component. The Emission Factor Database (EFDB) is freely accessible. |
+
+---
+
+### 6.6 EXIOBASE — Environmentally Extended Input–Output Data (Waste)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Wood, R. et al. (2015). Global Sustainability Accounting — Developing EXIOBASE for Multi-Regional Footprint Analysis. *Sustainability*, 7(1), 138–163. Database: https://www.exiobase.eu/ |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | EXIOBASE (successor to the EXIOPOL project) provides multi-regional environmentally-extended input–output tables. These accounts underpin the Waste Management indicator's European-context waste composition data. Version 3.x is released under CC BY 4.0. |
+
+---
+
+### 6.7 WULCA AWARE — Water Scarcity Characterisation Factors
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Boulay, A.-M., Bare, J., Benini, L. et al. (2018). The WULCA consensus characterization model for water scarcity footprints: assessing impacts of water consumption based on available water remaining (AWARE). *The International Journal of Life Cycle Assessment*, 23, 368–378. https://doi.org/10.1007/s11367-017-1333-8. Factors: https://wulca-waterlca.org/aware/ |
+| **License name** | Free to use with mandatory citation — no formal Creative Commons licence declared |
+| **License URL** | https://wulca-waterlca.org/aware/faq/ |
+| **Commercial use** | ✓ Permitted (no stated restriction) |
+| **Attribution required** | Yes — citation to Boulay et al. 2018 required |
+| **Redistribution** | Not explicitly stated; AWARE factors downloadable without registration |
+| **Notes** | WULCA is a working group of the UNEP–SETAC Life Cycle Initiative. Per the WULCA FAQ: "There is no restriction in using the AWARE factors in your studies and environmental footprint methodologies. The only requirement is a proper citation." Used in both the Water Consumption indicator (AWARE scarcity scaling) and the Water Pollution indicator (water scarcity adjustment). |
+
+---
+
+### 6.8 Ligthart & van Harmelen (2019) — Water Consumption Shadow Prices
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Ligthart, T.N., van Harmelen, T. (2019). Estimation of shadow prices of soil organic carbon depletion and freshwater depletion for use in LCA. *The International Journal of Life Cycle Assessment*, 24, 1307–1318. https://doi.org/10.1007/s11367-019-01589-8 |
+| **License name** | Springer Nature copyright (all rights reserved unless open-access option taken) |
+| **License URL** | https://link.springer.com/article/10.1007/s11367-019-01589-8 |
+| **Commercial use** | ✗ Journal copyright; reproduction requires publisher permission |
+| **Attribution required** | Yes |
+| **Redistribution** | Publisher permission required |
+| **Notes** | Provides freshwater depletion shadow prices used in the Water Consumption economic damage pathway. An authors' accepted manuscript may be available via TNO or TU Delft institutional repositories. |
+
+---
+
+### 6.9 Debarre et al. (2022) — Water Consumption Health Damages
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Debarre, R. et al. (2022). [Full citation to be confirmed — DALY-based health damage from water deprivation]. Cited in `220511_Water consumption_update.xlsx`. |
+| **License name** | To be determined |
+| **License URL** | To be confirmed |
+| **Commercial use** | To be determined |
+| **Attribution required** | Yes |
+| **Redistribution** | To be determined |
+| **Notes** | Used for the DALY-based health damage pathway in the Water Consumption indicator. Full bibliographic details not yet included in WifOR input file metadata; flagged in BACKLOG.md. |
+
+---
+
+### 6.10 EPS — Environmental Priority Strategies (Land Use)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Steen, B. (2015). *EPS 2015d.1 — A system for weighting environmental characteristics according to their contribution to safeguard subjects*. Swedish Life Cycle Center, Chalmers University of Technology. https://www.lifecyclecenter.se/projects/eps-environmental-priority-strategies-in-product-design/ |
+| **License name** | Open academic access — no formal Creative Commons licence declared |
+| **License URL** | https://www.lifecyclecenter.se/ |
+| **Commercial use** | ✓ Broadly used in commercial LCA practice; no stated restriction |
+| **Attribution required** | Yes |
+| **Redistribution** | CPM LCA Database companion data freely accessible; no explicit redistribution restriction |
+| **Notes** | The EPS system monetises ecosystem service loss across five safeguard subjects. The EPS 2015d.1 weighting factors are the basis for the Land Use indicator's ecosystem service damage costs (working capacity, water treatment, crop growth, biodiversity). |
+
+---
+
+### 6.11 LANCA — Land Use Characterisation Factors
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Bach, V., Lehmann, A., Görmer, M., Finkbeiner, M. (2020). *LANCA® Characterization Factors for Life Cycle Assessment, Version 2.5*. Fraunhofer Institute for Building Physics IBP. https://www.ibp.fraunhofer.de/en/expertise/life-cycle-engineering/applied-methods/lanca.html |
+| **License name** | Fraunhofer IBP copyright — free for research and academic use; no formal CC licence |
+| **License URL** | https://www.ibp.fraunhofer.de/en/expertise/life-cycle-engineering/applied-methods/lanca.html |
+| **Commercial use** | Restricted — Fraunhofer IBP copyright; commercial use requires separate agreement |
+| **Attribution required** | Yes |
+| **Redistribution** | Not permitted without Fraunhofer IBP permission |
+| **Notes** | LANCA provides country-level land use characterisation factors for four sub-indicators (mechanical filtration, physicochemical filtration, groundwater replenishment, biotic production capacity, erosion resistance) used to localise EPS global values to national conditions in the Land Use indicator. Factors are downloadable after registration from the Fraunhofer IBP website. |
+
+---
+
+### 6.12 Ahlroth (2009) — Water Pollution WTP Base Values (Sweden)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Ahlroth, S. (2009). [Full citation to be confirmed — Swedish WTP estimates for N/P in freshwater and marine environments]. Cited in `230324_WaterPollution_Mon_Coef_Final_DC.xlsx` as the basis for PPP value transfer. |
+| **License name** | To be determined (likely Swedish EPA report or journal article) |
+| **License URL** | To be confirmed |
+| **Commercial use** | To be determined |
+| **Attribution required** | Yes |
+| **Redistribution** | To be determined |
+| **Notes** | Provides the Swedish baseline WTP values used in the Water Pollution PPP value transfer: freshwater phosphorus (USD 136/kg), marine phosphorus (USD 68/kg), marine nitrogen (USD 9/kg). Full bibliographic details not yet in WifOR input file metadata; flagged in BACKLOG.md. |
+
+---
+
+### 6.13 Steen (2020) — Water Pollution Nutrients (N, P)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Steen, B. (2020). [Full citation to be confirmed — eutrophication damage valuation for N and P]. Swedish Life Cycle Center / Chalmers University of Technology. Cited in `230324_WaterPollution_Mon_Coef_Final_DC.xlsx`. |
+| **License name** | Open academic access — Swedish Life Cycle Center; no formal CC licence declared |
+| **License URL** | https://www.lifecyclecenter.se/ |
+| **Commercial use** | ✓ Broadly used in academic and commercial LCA practice |
+| **Attribution required** | Yes |
+| **Redistribution** | Not explicitly stated |
+| **Notes** | Provides the damage valuation methodology for freshwater eutrophication (N and P) used in the Water Pollution indicator nutrient pathway. Steen is the creator of the EPS framework; this 2020 work extends the EPS approach to nutrient damage costs. |
+
+---
+
+### 6.14 USEtox — Chemical Toxicity Model (Water Pollution — Heavy Metals)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Rosenbaum, R.K. et al. (2008). USEtox — The UNEP-SETAC toxicity model for comparative assessment of chemicals (organic chemicals). *The International Journal of Life Cycle Assessment*, 13(7), 532–546. Model: https://usetox.org |
+| **License name** | USEtox Licence Agreement — personal, royalty-free, non-exclusive, non-transferable, perpetual |
+| **License URL** | https://www.usetox.org/model/license |
+| **Commercial use** | ✓ Commercial use of *results* generated using USEtox is permitted; the model itself may not be redistributed or renamed |
+| **Attribution required** | Yes — "USEtox" must be cited |
+| **Redistribution** | ✗ Model redistribution not permitted; results (characterisation factors) may be used commercially |
+| **Notes** | USEtox is endorsed by UNEP and SETAC as the international consensus model for human toxicity and ecotoxicity in LCA. Characterisation factors for heavy metals (As, Cd, Hg, Cr, Pb, Ni, Cu, Zn, Sb) in water are used in the Water Pollution indicator. Results generated with unmodified USEtox data may be labelled "USEtox factors." |
+
+---
+
+### 6.15 Psacharopoulos & Patrinos (2018) — Returns to Education (Training)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Psacharopoulos, G., Patrinos, H.A. (2018). Returns to investment in education: a decennial review of the global literature. *Education Economics*, 26(5), 445–458. https://doi.org/10.1080/09645292.2018.1484426. Also available as World Bank Policy Research Working Paper WPS8402 (open access): https://documents.worldbank.org/curated/en/442521523465644318 |
+| **License name** | Taylor & Francis copyright (journal version); World Bank Open Access — CC BY 3.0 IGO (WPS8402 version) |
+| **License URL** | Journal: https://www.tandfonline.com/doi/abs/10.1080/09645292.2018.1484426 · WB WP: https://documents.worldbank.org/curated/en/442521523465644318 |
+| **Commercial use** | ✗ Journal version (publisher copyright); ✓ World Bank WP version (open including commercial) |
+| **Attribution required** | Yes |
+| **Redistribution** | Journal version: publisher permission required; WB WP version: permitted with attribution |
+| **Notes** | Provides the global meta-analysis of returns to schooling (~9% per year of education, with regional variation) that forms the basis for the Training indicator. The World Bank working paper version (WPS8402) is freely accessible and recommended for citation and reuse. |
+
+---
+
+### 6.16 GIVE Model — Global Impacts and Valuation of Emissions (UBA MC 4.0 GHG)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Anthoff, D. (2025). *GIVE model — Global Impacts and Valuation of Emissions*. [Academic publication and model repository; version used in UBA Handbook MC 4.0.] |
+| **License name** | To be confirmed — academic model; likely open-source (MIT or similar) on GitHub |
+| **License URL** | To be confirmed |
+| **Commercial use** | To be confirmed |
+| **Attribution required** | Yes — Anthoff and UBA Handbook (Eser et al. 2025) must be cited |
+| **Redistribution** | To be confirmed |
+| **Notes** | The GIVE model (successor to the FUND model) is used exclusively by UBA MC 4.0 to derive GHG value factors (Table 1). It applies equity-weighted damage functions with German income as the reference point, providing two PRTP scenarios (0 % and 1 %). GIVE models CH₄ and N₂O directly (not via GWP100 proxies), unlike DICE/RICE. This is the key methodological distinction between UBA and WifOR GHG value factors. |
+
+---
+
+### 6.17 Environmental Prices Handbook EU27 — CE Delft 2024
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | De Vries, J. et al. (2025). *Environmental Prices Handbook EU27, 2024 edition*. CE Delft, Delft, April 2025. |
+| **License name** | CE Delft proprietary — all rights reserved |
+| **License URL** | https://ce.nl/en/ |
+| **Commercial use** | ✗ Restricted — handbook purchased or licensed from CE Delft; value factors not freely redistributable |
+| **Attribution required** | Yes — CE Delft and the specific handbook edition must be cited |
+| **Redistribution** | ✗ Not permitted without CE Delft permission |
+| **Notes** | Primary source for all CE Delft 2024 value factors (Tables 1–8 covering GHG, air pollutants, water, heavy metals, fossil ADP, radionuclides, critical minerals, land use). The handbook provides EU27-average values in EUR 2021 that must be transferred to other countries via VFT (see VALUE_TRANSFER.md). |
+
+---
+
+### 6.18 Eurostat — Occupational Safety Statistics (OHS)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Eurostat (annual). *European Statistics on Accidents at Work (ESAW)*. Statistical Office of the European Union. https://ec.europa.eu/eurostat/web/health/health-safety-work |
+| **License name** | Creative Commons Attribution 4.0 International (CC BY 4.0) — pursuant to EC Decision 2011/833/EU |
+| **License URL** | https://creativecommons.org/licenses/by/4.0/ |
+| **Commercial use** | ✓ Permitted |
+| **Attribution required** | Yes — "Source: Eurostat" |
+| **Redistribution** | Permitted with attribution |
+| **Notes** | Provides European workplace incident rate statistics (fatal and non-fatal accidents, occupational diseases, by sector) used in the OHS indicator. Eurostat data are published under CC BY 4.0 terms applicable to all EC institutional data under Decision 2011/833/EU. |
+
+---
+
+### 6.19 IHME — Global Burden of Disease (OHS Disability Weights)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Full citation** | Institute for Health Metrics and Evaluation (IHME) (2019). *Global Burden of Disease Study 2019 (GBD 2019) Results*. University of Washington, Seattle. https://www.healthdata.org/gbd |
+| **License name** | IHME Non-Commercial User Agreement |
+| **License URL** | https://www.healthdata.org/data-tools-practices/data-practices/ihme-free-charge-non-commercial-user-agreement |
+| **Commercial use** | ✗ Non-commercial and academic use only |
+| **Attribution required** | Yes — IHME and GBD study year must be cited |
+| **Redistribution** | Non-commercial redistribution with attribution permitted |
+| **Notes** | GBD disability weights (severity scores 0–1 for each injury/disease category) are used in the OHS indicator to calculate Years Lived with Disability (YLD). The GBD study is the global standard for disability weights. Commercial applications using GBD data should contact IHME for licensing. |
 
 ---
 
@@ -1140,7 +1608,7 @@ See README.md Section 6 for maturity levels:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-02
+**Document Version**: 2.0
+**Last Updated**: 2026-03-09
 **Maintained by**: WifOR Development Team
 **Contact**: dimitrij.euler@greenings.org
