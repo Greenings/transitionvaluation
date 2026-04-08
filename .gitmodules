@@ -20,3 +20,6 @@
 	path = valuingimpact-value-factors
 	url = https://github.com/d1mitrij/ValuingImpact_vf.git
 	branch = dima
+[submodule "aware-cf-calculator"]
+	path = aware-cf-calculator
+	url = https://github.com/PascalLesage/aware_cf_calculator.git
