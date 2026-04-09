@@ -157,59 +157,81 @@ def run_supply_chain(projects: list[dict], tier_from: int, tier_to: int) -> tupl
 SCENARIO_YEARS   = [2025, 2030, 2040]
 SCENARIO_LABELS  = ["SSP1-1.9", "SSP2-4.5", "SSP3-7.0", "SSP4-6.0", "SSP5-8.5"]
 
+# Paths to each model's intensity factors file (OSeMOSYS always present;
+# GCAM and MESSAGEix loaded when their results/ directory exists)
+MODEL_FACTOR_PATHS = {
+    "OSeMOSYS": SCENARIO_DIR / "osemosys"  / "results" / "tvpdbio_intensity_factors.csv",
+    "GCAM":     SCENARIO_DIR / "gcam"      / "results" / "tvpdbio_intensity_factors.csv",
+    "MESSAGEix-GLOBIOM": SCENARIO_DIR / "messageix" / "results" / "tvpdbio_intensity_factors.csv",
+}
+
 def run_scenario_adjustment(projects: list[dict], supply_summary: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Load OSeMOSYS intensity factors and compute scenario-adjusted GHG
-    for each project × scenario × year combination.
+    Load intensity factors from all available simulation models (OSeMOSYS,
+    GCAM, MESSAGEix-GLOBIOM) and compute scenario-adjusted GHG for every
+    project × model × scenario × year combination.
+
+    Region names are matched as-is (Africa/Asia/Europe/LATAM) — no
+    case transformation so that "LATAM" is never mangled.
     """
-    factors_path = SCENARIO_DIR / "osemosys" / "results" / "tvpdbio_intensity_factors.csv"
-    if not factors_path.exists():
-        print(f"[WARN] Scenario factors not found at {factors_path}. Run tvp_scenario first.")
+    # Collect factors from every model that has results on disk
+    all_factors: list[pd.DataFrame] = []
+    for model_name, fpath in MODEL_FACTOR_PATHS.items():
+        if fpath.exists():
+            df = pd.read_csv(fpath)
+            df["model_label"] = model_name
+            all_factors.append(df)
+            print(f"      [OK]      {model_name}: {len(df)} factor rows")
+        else:
+            print(f"      [PENDING] {model_name}: no results at {fpath.relative_to(ROOT)}")
+
+    if not all_factors:
+        print("[WARN] No scenario factors found. Run tvp_scenario/osemosys/run_simulation.py first.")
         return pd.DataFrame(), pd.DataFrame()
 
-    factors = pd.read_csv(factors_path)
+    factors = pd.concat(all_factors, ignore_index=True)
 
-    # Pull baseline GHG (tiers 0-5 sum) per project from supply summary
-    ghg_col = [c for c in supply_summary.columns if c.startswith("GHG_tCO2e")][0]
-    baseline = supply_summary[["project_id", "region", ghg_col]].copy()
-    baseline.rename(columns={ghg_col: "baseline_GHG_tCO2e"}, inplace=True)
-
-    # Scenario-level factor table — filter to relevant years and capitalise region
+    # Filter to analysis years and scenarios
     factors_filt = factors[
         factors["year"].isin(SCENARIO_YEARS) &
         factors["scenario"].isin(SCENARIO_LABELS)
     ].copy()
-    factors_filt["region"] = factors_filt["region"].str.capitalize()
+
+    # Baseline GHG (tiers summed) per project — use the 'region' column
+    # which tvp_io_lib returns as the normalised broad-region name
+    ghg_col = [c for c in supply_summary.columns if c.startswith("GHG_tCO2e")][0]
+    baseline = supply_summary[["project_id", "region", ghg_col]].copy()
+    baseline.rename(columns={ghg_col: "baseline_GHG_tCO2e"}, inplace=True)
 
     adj_rows = []
     for _, proj_row in baseline.iterrows():
-        pid     = proj_row["project_id"]
-        region  = proj_row["region"]
+        pid      = proj_row["project_id"]
+        region   = proj_row["region"]         # e.g. "LATAM", "Africa", "Europe", "Asia"
         base_ghg = proj_row["baseline_GHG_tCO2e"]
 
+        # Match on exact region string — avoids str.capitalize() mangling LATAM
         region_factors = factors_filt[factors_filt["region"] == region]
         for _, frow in region_factors.iterrows():
-            adj_ghg = round(base_ghg * frow["adj_ratio_ghg"], 1)
-            adj_emp_mult = frow["adj_ratio_employment"]
             adj_rows.append({
+                "model":                frow["model_label"],
                 "project_id":           pid,
                 "region":               region,
                 "scenario":             frow["scenario"],
                 "year":                 int(frow["year"]),
                 "adj_ratio_ghg":        frow["adj_ratio_ghg"],
-                "adj_ratio_employment": adj_emp_mult,
+                "adj_ratio_employment": frow["adj_ratio_employment"],
                 "baseline_GHG_tCO2e":  base_ghg,
-                "adjusted_GHG_tCO2e":  adj_ghg,
+                "adjusted_GHG_tCO2e":  round(base_ghg * frow["adj_ratio_ghg"], 1),
             })
 
     adj_df = pd.DataFrame(adj_rows)
 
-    # Wide pivot: rows = project × scenario, columns = years
     if adj_df.empty:
         return factors_filt, adj_df
 
+    # Wide pivot: rows = model × project × scenario, columns = years
     pivot = adj_df.pivot_table(
-        index=["project_id", "region", "scenario"],
+        index=["model", "project_id", "region", "scenario"],
         columns="year",
         values="adjusted_GHG_tCO2e",
     ).reset_index()
@@ -354,23 +376,32 @@ def write_final_analysis(
     a("")
     a("---")
     a("")
-    a("## 3. SSP Scenario Analysis (tvp_scenario / OSeMOSYS)")
+    available_models = scenario_adj["model"].unique().tolist() if not scenario_adj.empty and "model" in scenario_adj.columns else []
+    model_list_str = ", ".join(available_models) if available_models else "OSeMOSYS"
+    a(f"## 3. SSP Scenario Analysis (tvp_scenario — {model_list_str})")
     a("")
     a("GHG intensity adjustment ratios from OSeMOSYS REMIND-MAgPIE calibration.")
     a("All five IPCC AR6 Shared Socioeconomic Pathways (SSP1–SSP5).")
+    if len(available_models) > 1:
+        a(f"Results from {len(available_models)} simulation frameworks: {', '.join(available_models)}.")
     a("")
-    a("### 3.1 Scenario-adjusted GHG (selected projects, tCO2e)")
+    a("### 3.1 Scenario-adjusted GHG — all projects (tCO2e)")
     a("")
     if not scenario_adj.empty and "2025" in scenario_adj.columns:
-        # Show the three largest projects
-        top_pids = supply_summary.sort_values(ghg_col, ascending=False)["project_id"].head(4).tolist() if ghg_col in supply_summary.columns else []
-        subset = scenario_adj[scenario_adj["project_id"].isin(top_pids)] if top_pids else scenario_adj
         yr_cols = [c for c in ["2025", "2030", "2040"] if c in scenario_adj.columns]
-        a("| Project | Scenario | " + " | ".join(yr_cols) + " |")
-        a("|---------|----------|" + "|".join(["---"] * len(yr_cols)) + "|")
-        for _, row in subset.sort_values(["project_id", "scenario"]).iterrows():
-            vals = " | ".join(_fmt(row.get(yr, "n/a")) for yr in yr_cols)
-            a(f"| {row['project_id']} | {row['scenario']} | {vals} |")
+        has_model_col = "model" in scenario_adj.columns and scenario_adj["model"].nunique() > 1
+        if has_model_col:
+            a("| Model | Project | Region | Scenario | " + " | ".join(yr_cols) + " |")
+            a("|-------|---------|--------|----------|" + "|".join(["---"] * len(yr_cols)) + "|")
+            for _, row in scenario_adj.sort_values(["model", "project_id", "scenario"]).iterrows():
+                vals = " | ".join(_fmt(row.get(yr, "n/a")) for yr in yr_cols)
+                a(f"| {row['model']} | {row['project_id']} | {row['region']} | {row['scenario']} | {vals} |")
+        else:
+            a("| Project | Region | Scenario | " + " | ".join(yr_cols) + " |")
+            a("|---------|--------|----------|" + "|".join(["---"] * len(yr_cols)) + "|")
+            for _, row in scenario_adj.sort_values(["project_id", "scenario"]).iterrows():
+                vals = " | ".join(_fmt(row.get(yr, "n/a")) for yr in yr_cols)
+                a(f"| {row['project_id']} | {row['region']} | {row['scenario']} | {vals} |")
     else:
         a("*Scenario results not available — run `tvp_scenario/osemosys/run_simulation.py` first.*")
     a("")
@@ -555,12 +586,17 @@ def main() -> None:
     print(f"      → results/supply_chain_summary.csv ({len(summary)} rows)")
 
     # ── Pass 2: Scenario adjustment ───────────────────────────────────────────
-    print(f"\n[2/3] Scenario adjustment (OSeMOSYS SSP1–5) ...")
+    n_models_available = sum(1 for p in MODEL_FACTOR_PATHS.values() if p.exists())
+    print(f"\n[2/3] Scenario adjustment ({n_models_available} model(s): OSeMOSYS"
+          + (", GCAM" if (SCENARIO_DIR / "gcam" / "results" / "tvpdbio_intensity_factors.csv").exists() else "")
+          + (", MESSAGEix-GLOBIOM" if (SCENARIO_DIR / "messageix" / "results" / "tvpdbio_intensity_factors.csv").exists() else "")
+          + ") ...")
     factors_df, scenario_pivot = run_scenario_adjustment(projects, summary)
-    factors_df.to_csv(RESULTS_DIR / "scenario_adjustment.csv", index=False)
+    if not factors_df.empty:
+        factors_df.to_csv(RESULTS_DIR / "scenario_adjustment.csv", index=False)
+        print(f"      → results/scenario_adjustment.csv ({len(factors_df)} rows)")
     if not scenario_pivot.empty:
         scenario_pivot.to_csv(RESULTS_DIR / "scenario_ghg_adjusted.csv", index=False)
-        print(f"      → results/scenario_adjustment.csv ({len(factors_df)} rows)")
         print(f"      → results/scenario_ghg_adjusted.csv ({len(scenario_pivot)} rows)")
     else:
         print("      [WARN] No scenario data — skipping.")

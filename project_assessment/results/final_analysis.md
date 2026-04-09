@@ -56,30 +56,60 @@ Calibrated EXIOBASE 3.8 A-matrix with regional intensity multipliers.
 
 ---
 
-## 3. SSP Scenario Analysis (tvp_scenario / OSeMOSYS)
+## 3. SSP Scenario Analysis (tvp_scenario — OSeMOSYS)
 
 GHG intensity adjustment ratios from OSeMOSYS REMIND-MAgPIE calibration.
 All five IPCC AR6 Shared Socioeconomic Pathways (SSP1–SSP5).
 
-### 3.1 Scenario-adjusted GHG (selected projects, tCO2e)
+### 3.1 Scenario-adjusted GHG — all projects (tCO2e)
 
-| Project | Scenario | 2025 | 2030 | 2040 |
-|---------|----------|---|---|---|
-| Hydro_AS | SSP1-1.9 | 80,498 | 56,373 | 825 |
-| Hydro_AS | SSP2-4.5 | 78,494 | 52,611 | 20,569 |
-| Hydro_AS | SSP3-7.0 | 72,139 | 53,849 | 20,854 |
-| Hydro_AS | SSP4-6.0 | 79,123 | 51,334 | 19,223 |
-| Hydro_AS | SSP5-8.5 | 70,312 | 84,054 | 38,407 |
-| Proj_003 | SSP1-1.9 | 14,838 | 7,604 | 2,047 |
-| Proj_003 | SSP2-4.5 | 20,561 | 16,287 | 8,798 |
-| Proj_003 | SSP3-7.0 | 22,190 | 20,143 | 11,462 |
-| Proj_003 | SSP4-6.0 | 16,219 | 8,187 | 2,633 |
-| Proj_003 | SSP5-8.5 | 22,450 | 20,466 | 14,462 |
-| Rail_EU_DEV | SSP1-1.9 | 438,784 | 224,855 | 60,527 |
-| Rail_EU_DEV | SSP2-4.5 | 608,001 | 481,628 | 260,151 |
-| Rail_EU_DEV | SSP3-7.0 | 656,164 | 595,637 | 338,936 |
-| Rail_EU_DEV | SSP4-6.0 | 479,615 | 242,108 | 77,851 |
-| Rail_EU_DEV | SSP5-8.5 | 663,855 | 605,198 | 427,642 |
+| Project | Region | Scenario | 2025 | 2030 | 2040 |
+|---------|--------|----------|---|---|---|
+| Hydro_AF | Africa | SSP1-1.9 | 14,952 | 857 | 470 |
+| Hydro_AF | Africa | SSP2-4.5 | 15,847 | 10,581 | 4,230 |
+| Hydro_AF | Africa | SSP3-7.0 | 16,239 | 10,537 | 4,002 |
+| Hydro_AF | Africa | SSP4-6.0 | 17,829 | 13,650 | 6,901 |
+| Hydro_AF | Africa | SSP5-8.5 | 16,178 | 10,149 | 3,739 |
+| Hydro_AS | Asia | SSP1-1.9 | 80,498 | 56,373 | 825 |
+| Hydro_AS | Asia | SSP2-4.5 | 78,494 | 52,611 | 20,569 |
+| Hydro_AS | Asia | SSP3-7.0 | 72,139 | 53,849 | 20,854 |
+| Hydro_AS | Asia | SSP4-6.0 | 79,123 | 51,334 | 19,223 |
+| Hydro_AS | Asia | SSP5-8.5 | 70,312 | 84,054 | 38,407 |
+| Hydro_EU | Europe | SSP1-1.9 | 456 | 234 | 63 |
+| Hydro_EU | Europe | SSP2-4.5 | 632 | 501 | 271 |
+| Hydro_EU | Europe | SSP3-7.0 | 682 | 620 | 352 |
+| Hydro_EU | Europe | SSP4-6.0 | 499 | 252 | 81 |
+| Hydro_EU | Europe | SSP5-8.5 | 690 | 629 | 445 |
+| Proj_001 | LATAM | SSP1-1.9 | 102,295 | 73,903 | 14,783 |
+| Proj_001 | LATAM | SSP2-4.5 | 133,912 | 98,181 | 47,863 |
+| Proj_001 | LATAM | SSP3-7.0 | 145,730 | 103,000 | 48,372 |
+| Proj_001 | LATAM | SSP4-6.0 | 132,710 | 99,539 | 50,135 |
+| Proj_001 | LATAM | SSP5-8.5 | 149,100 | 100,780 | 43,841 |
+| Proj_002 | Africa | SSP1-1.9 | 11,667 | 669 | 366 |
+| Proj_002 | Africa | SSP2-4.5 | 12,366 | 8,256 | 3,301 |
+| Proj_002 | Africa | SSP3-7.0 | 12,671 | 8,222 | 3,123 |
+| Proj_002 | Africa | SSP4-6.0 | 13,912 | 10,651 | 5,385 |
+| Proj_002 | Africa | SSP5-8.5 | 12,624 | 7,919 | 2,918 |
+| Proj_003 | Europe | SSP1-1.9 | 14,838 | 7,604 | 2,047 |
+| Proj_003 | Europe | SSP2-4.5 | 20,561 | 16,287 | 8,798 |
+| Proj_003 | Europe | SSP3-7.0 | 22,190 | 20,143 | 11,462 |
+| Proj_003 | Europe | SSP4-6.0 | 16,219 | 8,187 | 2,633 |
+| Proj_003 | Europe | SSP5-8.5 | 22,450 | 20,466 | 14,462 |
+| Rail_EU_DEV | Europe | SSP1-1.9 | 438,784 | 224,855 | 60,527 |
+| Rail_EU_DEV | Europe | SSP2-4.5 | 608,001 | 481,628 | 260,151 |
+| Rail_EU_DEV | Europe | SSP3-7.0 | 656,164 | 595,637 | 338,936 |
+| Rail_EU_DEV | Europe | SSP4-6.0 | 479,615 | 242,108 | 77,851 |
+| Rail_EU_DEV | Europe | SSP5-8.5 | 663,855 | 605,198 | 427,642 |
+| Rail_EU_OP1 | Europe | SSP1-1.9 | 24 | 12 | 3 |
+| Rail_EU_OP1 | Europe | SSP2-4.5 | 33 | 26 | 14 |
+| Rail_EU_OP1 | Europe | SSP3-7.0 | 36 | 33 | 19 |
+| Rail_EU_OP1 | Europe | SSP4-6.0 | 26 | 13 | 4 |
+| Rail_EU_OP1 | Europe | SSP5-8.5 | 36 | 33 | 24 |
+| Rail_EU_OP2 | Europe | SSP1-1.9 | 17 | 9 | 2 |
+| Rail_EU_OP2 | Europe | SSP2-4.5 | 23 | 18 | 10 |
+| Rail_EU_OP2 | Europe | SSP3-7.0 | 25 | 23 | 13 |
+| Rail_EU_OP2 | Europe | SSP4-6.0 | 18 | 9 | 3 |
+| Rail_EU_OP2 | Europe | SSP5-8.5 | 25 | 23 | 16 |
 
 ### 3.2 Scenario narrative
 
