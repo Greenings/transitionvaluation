@@ -107,47 +107,123 @@ def _load_projects() -> list[dict]:
 # PASS 1 — Supply-chain analysis (tvp_dbio)
 # ──────────────────────────────────────────────────────────────────────────────
 
-def run_supply_chain(projects: list[dict], tier_from: int, tier_to: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+STRESSOR_COLS = ["GHG_tCO2e", "Employment_FTE", "Water_1000m3", "ValueAdded_M$"]
+PROJ_KEY_COLS = ["project_id", "asset_class", "database", "sector_code",
+                 "country", "region", "invest_usd"]
+
+
+def _tier1_sourcing_rows(proj: dict, io) -> list[dict]:
     """
-    For each project call tier_impact() and collect tier-by-tier results.
-    Returns (detail_df, summary_df).
+    Call tier1_impact() and flatten the bilateral sourcing-country breakdown
+    into one row per (project, supplying_sector, sourcing_region).
+    """
+    r = io.tier1_impact(
+        invest_usd  = proj["invest_usd"],
+        sector_code = proj["sector_code"],
+        country     = proj["region"],
+        database    = "exiobase",
+    )
+    rows = []
+    for sector, by_region in r["tier1_by_sector"].items():
+        for src_region, vals in by_region.items():
+            rows.append({
+                "project_id":       proj["project_id"],
+                "asset_class":      proj["asset_class"],
+                "database":         r["database"],
+                "sector_code":      r["sector_code"],
+                "country":          r["country"],
+                "region":           r["region"],
+                "invest_usd":       r["invest_usd"],
+                "tier":             1,
+                "supplying_sector": sector,
+                "sourcing_region":  src_region,
+                "sourcing_share":   vals["share"],
+                "spend_M$":         vals["spend_M$"],
+                "GHG_tCO2e":        vals["GHG_tCO2e"],
+                "Employment_FTE":   vals["Employment_FTE"],
+                "Water_1000m3":     vals["Water_1000m3"],
+                "ValueAdded_M$":    vals["ValueAdded_M$"],
+            })
+    return rows
+
+
+def run_supply_chain(projects: list[dict], tier_to: int = 10) -> dict[str, pd.DataFrame]:
+    """
+    Run the full supply-chain decomposition for all projects and return a dict
+    of DataFrames keyed by table name:
+
+      "tier0"      — Tier 0: direct investment / one-time transaction
+                     (project CAPEX split across 8 supplying sectors)
+      "tier1"      — Tier 1: first upstream round with bilateral sourcing-
+                     country breakdown (via tier1_impact)
+      "tier2"      — Tier 2: second upstream round
+      "tier3_10"   — Tiers 3–10: deep upstream, aggregated per project
+                     and supplying sector
+      "summary"    — Project totals: stressors summed across tiers 0–10
     """
     import tvp_io_lib as io
 
-    detail_rows = []
-    for proj in projects:
-        if proj["invest_usd"] < 1:
-            continue  # skip zero-capex operational entries
+    active = [p for p in projects if p["invest_usd"] >= 1]
 
+    # ── Full tier-by-tier detail (tiers 0–10) ────────────────────────────────
+    detail_frames = []
+    t1_frames     = []
+    for proj in active:
         df = io.tier_impact(
             invest_usd  = proj["invest_usd"],
             sector_code = proj["sector_code"],
             country     = proj["region"],
             database    = "exiobase",
-            tier_from   = tier_from,
+            tier_from   = 0,
             tier_to     = tier_to,
         )
         df.insert(0, "project_id",  proj["project_id"])
         df.insert(1, "asset_class", proj["asset_class"])
-        detail_rows.append(df)
+        detail_frames.append(df)
 
-    detail = pd.concat(detail_rows, ignore_index=True)
+        t1_frames.extend(_tier1_sourcing_rows(proj, io))
 
-    summary = (
-        detail.groupby(["project_id", "asset_class", "database", "sector_code",
-                         "country", "region", "invest_usd"])
-        [["GHG_tCO2e", "Employment_FTE", "Water_1000m3", "ValueAdded_M$"]]
+    detail = pd.concat(detail_frames, ignore_index=True)
+
+    # ── Tier 0: direct spend ─────────────────────────────────────────────────
+    tier0 = detail[detail["tier"] == 0].drop(columns=["tier"]).reset_index(drop=True)
+
+    # ── Tier 1: first upstream, with bilateral sourcing-country breakdown ────
+    tier1 = pd.DataFrame(t1_frames)
+
+    # ── Tier 2: second upstream round ────────────────────────────────────────
+    tier2 = detail[detail["tier"] == 2].drop(columns=["tier"]).reset_index(drop=True)
+
+    # ── Tiers 3–10: deep upstream, summed across tiers per project + sector ──
+    deep = detail[detail["tier"] >= 3].copy()
+    tier3_10 = (
+        deep.groupby(PROJ_KEY_COLS + ["supplying_sector"])
+        [["spend_M$"] + STRESSOR_COLS]
         .sum()
         .reset_index()
     )
-    summary.rename(columns={
-        "GHG_tCO2e":      f"GHG_tCO2e_t{tier_from}_{tier_to}",
-        "Employment_FTE": f"Emp_FTE_t{tier_from}_{tier_to}",
-        "Water_1000m3":   f"Water_1000m3_t{tier_from}_{tier_to}",
-        "ValueAdded_M$":  f"VA_Musd_t{tier_from}_{tier_to}",
+    tier3_10.insert(len(PROJ_KEY_COLS), "tier_range", "3-10")
+
+    # ── Summary: project totals across all tiers ─────────────────────────────
+    summary_raw = (
+        detail.groupby(PROJ_KEY_COLS)[STRESSOR_COLS]
+        .sum()
+        .reset_index()
+    )
+    summary_raw.rename(columns={
+        "GHG_tCO2e":      "GHG_tCO2e_t0_10",
+        "Employment_FTE": "Emp_FTE_t0_10",
+        "Water_1000m3":   "Water_1000m3_t0_10",
+        "ValueAdded_M$":  "VA_Musd_t0_10",
     }, inplace=True)
 
-    return detail, summary
+    return {
+        "tier0":    tier0,
+        "tier1":    tier1,
+        "tier2":    tier2,
+        "tier3_10": tier3_10,
+        "summary":  summary_raw,
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -287,10 +363,11 @@ def write_final_analysis(
     tier_from:      int,
     tier_to:        int,
 ) -> None:
-    ghg_col = f"GHG_tCO2e_t{tier_from}_{tier_to}"
-    emp_col = f"Emp_FTE_t{tier_from}_{tier_to}"
-    wat_col = f"Water_1000m3_t{tier_from}_{tier_to}"
-    va_col  = f"VA_Musd_t{tier_from}_{tier_to}"
+    # Column names are always t0_<tier_to> regardless of tier_from
+    ghg_col = f"GHG_tCO2e_t0_{tier_to}"
+    emp_col = f"Emp_FTE_t0_{tier_to}"
+    wat_col = f"Water_1000m3_t0_{tier_to}"
+    va_col  = f"VA_Musd_t0_{tier_to}"
 
     total_invest = sum(p["invest_usd"] for p in projects) / 1e6
     total_ghg    = supply_summary[ghg_col].sum() if ghg_col in supply_summary else 0
@@ -324,8 +401,18 @@ def write_final_analysis(
     a("")
     a("## 2. Supply-Chain Impact (tvp_dbio)")
     a("")
-    a(f"Leontief power-series decomposition over tiers {tier_from}–{tier_to}.")
+    a(f"Leontief power-series decomposition over tiers 0–{tier_to}.")
     a("Calibrated EXIOBASE 3.8 A-matrix with regional intensity multipliers.")
+    a("")
+    a("Four separate tables are produced, each covering a distinct supply-chain layer:")
+    a("")
+    a("| Table | Tier | Description |")
+    a("|-------|------|-------------|")
+    a("| `supply_chain_tier0.csv` | 0 | Direct investment — one-time CAPEX transaction split across 8 supplying sectors |")
+    a("| `supply_chain_tier1.csv` | 1 | First upstream round — what Tier 0 suppliers procure; includes bilateral sourcing-country breakdown |")
+    a("| `supply_chain_tier2.csv` | 2 | Second upstream round — sub-suppliers of Tier 1 |")
+    a(f"| `supply_chain_tier3_10.csv` | 3–{tier_to} | Deep upstream — aggregated across remaining tiers; accounts for residual supply-chain signal |")
+    a("")
     a("")
     a("### 2.1 Project-level totals")
     a("")
@@ -546,7 +633,8 @@ def write_final_analysis(
     a("| WWF Risk Filters | WRF 2.0 + BRF 1.0 | 2022 |")
     a("| Financial inputs | Project finance CSVs | 2025 |")
     a("")
-    a("Tiers summed: 0 to 5 (captures >99% of supply-chain signal for A spectral radius ≈ 0.52).")
+    a(f"Tiers computed: 0 to {tier_to}. Tiers 0–2 in individual tables; tiers 3–{tier_to} aggregated.")
+    a("Column A spectral radius ≈ 0.52 → geometric decay; tiers >8 contribute <0.1% of signal.")
     a("EUR/USD rate: 1.08 (applied to Rail CAPEX inputs).")
     a("")
 
@@ -563,12 +651,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="S4 integrated portfolio assessment")
     parser.add_argument("--skip-dependency", action="store_true",
                         help="Load existing dependency outputs instead of re-running pipeline")
-    parser.add_argument("--tiers", nargs=2, type=int, default=[0, 5],
-                        metavar=("FROM", "TO"),
-                        help="Tier range for supply-chain analysis (default: 0 5)")
+    parser.add_argument("--tier-max", type=int, default=10,
+                        help="Highest tier to compute for supply-chain analysis (default: 10)")
     args = parser.parse_args()
-
-    tier_from, tier_to = args.tiers[0], args.tiers[1]
 
     print("=" * 60)
     print("  S4 Portfolio — Integrated Assessment")
@@ -578,12 +663,22 @@ def main() -> None:
     print(f"\n[INFO] {len(projects)} projects loaded from {INPUT_DIR.name}/")
 
     # ── Pass 1: Supply chain ──────────────────────────────────────────────────
-    print(f"\n[1/3] Supply-chain analysis (tiers {tier_from}–{tier_to}) ...")
-    detail, summary = run_supply_chain(projects, tier_from, tier_to)
-    detail.to_csv(RESULTS_DIR / "supply_chain.csv", index=False)
-    summary.to_csv(RESULTS_DIR / "supply_chain_summary.csv", index=False)
-    print(f"      → results/supply_chain.csv ({len(detail)} rows)")
-    print(f"      → results/supply_chain_summary.csv ({len(summary)} rows)")
+    print(f"\n[1/3] Supply-chain analysis (tiers 0–{args.tier_max}) ...")
+    sc = run_supply_chain(projects, tier_to=args.tier_max)
+
+    sc["tier0"]   .to_csv(RESULTS_DIR / "supply_chain_tier0.csv",    index=False)
+    sc["tier1"]   .to_csv(RESULTS_DIR / "supply_chain_tier1.csv",    index=False)
+    sc["tier2"]   .to_csv(RESULTS_DIR / "supply_chain_tier2.csv",    index=False)
+    sc["tier3_10"].to_csv(RESULTS_DIR / "supply_chain_tier3_10.csv", index=False)
+    sc["summary"] .to_csv(RESULTS_DIR / "supply_chain_summary.csv",  index=False)
+
+    print(f"      → supply_chain_tier0.csv    ({len(sc['tier0'])} rows — direct investment)")
+    print(f"      → supply_chain_tier1.csv    ({len(sc['tier1'])} rows — 1st upstream + sourcing country)")
+    print(f"      → supply_chain_tier2.csv    ({len(sc['tier2'])} rows — 2nd upstream)")
+    print(f"      → supply_chain_tier3_10.csv ({len(sc['tier3_10'])} rows — deep upstream, aggregated)")
+    print(f"      → supply_chain_summary.csv  ({len(sc['summary'])} rows — project totals)")
+
+    summary = sc["summary"]
 
     # ── Pass 2: Scenario adjustment ───────────────────────────────────────────
     n_models_available = sum(1 for p in MODEL_FACTOR_PATHS.values() if p.exists())
@@ -608,7 +703,7 @@ def main() -> None:
 
     # ── Final analysis ────────────────────────────────────────────────────────
     print("\n[+] Writing final analysis ...")
-    write_final_analysis(projects, summary, scenario_pivot, dep_df, tier_from, tier_to)
+    write_final_analysis(projects, summary, scenario_pivot, dep_df, 0, args.tier_max)
 
     print("\n" + "=" * 60)
     print("  Assessment complete.")

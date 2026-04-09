@@ -27,32 +27,42 @@ four regions (Africa, Asia, Europe, LATAM).
 
 ## 2. Supply-Chain Impact (tvp_dbio)
 
-Leontief power-series decomposition over tiers 0–5.
+Leontief power-series decomposition over tiers 0–10.
 Calibrated EXIOBASE 3.8 A-matrix with regional intensity multipliers.
+
+Four separate tables are produced, each covering a distinct supply-chain layer:
+
+| Table | Tier | Description |
+|-------|------|-------------|
+| `supply_chain_tier0.csv` | 0 | Direct investment — one-time CAPEX transaction split across 8 supplying sectors |
+| `supply_chain_tier1.csv` | 1 | First upstream round — what Tier 0 suppliers procure; includes bilateral sourcing-country breakdown |
+| `supply_chain_tier2.csv` | 2 | Second upstream round — sub-suppliers of Tier 1 |
+| `supply_chain_tier3_10.csv` | 3–10 | Deep upstream — aggregated across remaining tiers; accounts for residual supply-chain signal |
+
 
 ### 2.1 Project-level totals
 
 | Project | Region | GHG (tCO2e) | Employment (FTE) | Water (000 m³) | Value Added (M USD) |
 |---------|--------|------------|-----------------|---------------|-------------------|
-| Hydro_AF | Africa | 21,065 | 826.6 | 135.8 | 31.27 |
-| Hydro_AS | Asia | 98,228 | 3,729.5 | 650.9 | 156.37 |
-| Hydro_EU | Europe | 748 | 25.4 | 4.7 | 2.08 |
-| Proj_001 | LATAM | 130,595 | 5,627.8 | 1,021.9 | 260.06 |
-| Proj_002 | Africa | 16,437 | 701.6 | 118.8 | 26.02 |
-| Proj_003 | Europe | 24,309 | 977.9 | 192.6 | 77.97 |
-| Rail_EU_DEV | Europe | 718,847 | 25,223.4 | 4,841.6 | 2,078.81 |
-| Rail_EU_OP1 | Europe | 40 | 1.5 | 0.3 | 0.14 |
-| Rail_EU_OP2 | Europe | 27 | 1.1 | 0.2 | 0.10 |
+| Hydro_AF | Africa | 21,290 | 835.4 | 137.6 | 31.64 |
+| Hydro_AS | Asia | 99,279 | 3,769.5 | 659.6 | 158.21 |
+| Hydro_EU | Europe | 755 | 25.7 | 4.8 | 2.11 |
+| Proj_001 | LATAM | 131,993 | 5,679.2 | 1,033.1 | 262.76 |
+| Proj_002 | Africa | 16,610 | 708.4 | 120.2 | 26.30 |
+| Proj_003 | Europe | 24,568 | 987.1 | 194.7 | 78.77 |
+| Rail_EU_DEV | Europe | 726,415 | 25,489.9 | 4,902.1 | 2,102.40 |
+| Rail_EU_OP1 | Europe | 40 | 1.5 | 0.3 | 0.15 |
+| Rail_EU_OP2 | Europe | 28 | 1.1 | 0.2 | 0.10 |
 
-**Portfolio totals:** GHG 1,010,296 tCO2e | Employment 37,115 FTE
+**Portfolio totals:** GHG 1,020,980 tCO2e | Employment 37,498 FTE
 
 ### 2.2 Key findings
 
-- **Highest GHG footprint:** Rail_EU_DEV (Europe) — 718,847 tCO2e. Driven by Rail_Dev CAPEX concentration in Manufacturing and Construction tiers.
-- **Highest employment generation:** Rail_EU_DEV (Europe) — 25,223 FTE. High regional labour intensity multiplier amplifies construction-phase employment.
-- **Health sector** (3 projects): 171,341 tCO2e, 7,307 FTE — large LATAM hospital (Proj_001, $250M) dominates due to import leakage in medical equipment supply chains.
-- **Energy sector** (3 projects): 120,041 tCO2e — Asia hydro retrofit ($150M) is the single largest contributor; EU efficiency tweak ($2M) is immaterial at portfolio scale.
-- **Transport sector** (3 projects): 718,914 tCO2e — Rail_EU_DEV €1.85B development phase accounts for the majority; operational projects (OP1/OP2) are negligible in CAPEX terms.
+- **Highest GHG footprint:** Rail_EU_DEV (Europe) — 726,415 tCO2e. Driven by Rail_Dev CAPEX concentration in Manufacturing and Construction tiers.
+- **Highest employment generation:** Rail_EU_DEV (Europe) — 25,490 FTE. High regional labour intensity multiplier amplifies construction-phase employment.
+- **Health sector** (3 projects): 173,171 tCO2e, 7,375 FTE — large LATAM hospital (Proj_001, $250M) dominates due to import leakage in medical equipment supply chains.
+- **Energy sector** (3 projects): 121,325 tCO2e — Asia hydro retrofit ($150M) is the single largest contributor; EU efficiency tweak ($2M) is immaterial at portfolio scale.
+- **Transport sector** (3 projects): 726,483 tCO2e — Rail_EU_DEV €1.85B development phase accounts for the majority; operational projects (OP1/OP2) are negligible in CAPEX terms.
 
 ---
 
@@ -65,51 +75,51 @@ All five IPCC AR6 Shared Socioeconomic Pathways (SSP1–SSP5).
 
 | Project | Region | Scenario | 2025 | 2030 | 2040 |
 |---------|--------|----------|---|---|---|
-| Hydro_AF | Africa | SSP1-1.9 | 14,952 | 857 | 470 |
-| Hydro_AF | Africa | SSP2-4.5 | 15,847 | 10,581 | 4,230 |
-| Hydro_AF | Africa | SSP3-7.0 | 16,239 | 10,537 | 4,002 |
-| Hydro_AF | Africa | SSP4-6.0 | 17,829 | 13,650 | 6,901 |
-| Hydro_AF | Africa | SSP5-8.5 | 16,178 | 10,149 | 3,739 |
-| Hydro_AS | Asia | SSP1-1.9 | 80,498 | 56,373 | 825 |
-| Hydro_AS | Asia | SSP2-4.5 | 78,494 | 52,611 | 20,569 |
-| Hydro_AS | Asia | SSP3-7.0 | 72,139 | 53,849 | 20,854 |
-| Hydro_AS | Asia | SSP4-6.0 | 79,123 | 51,334 | 19,223 |
-| Hydro_AS | Asia | SSP5-8.5 | 70,312 | 84,054 | 38,407 |
-| Hydro_EU | Europe | SSP1-1.9 | 456 | 234 | 63 |
-| Hydro_EU | Europe | SSP2-4.5 | 632 | 501 | 271 |
-| Hydro_EU | Europe | SSP3-7.0 | 682 | 620 | 352 |
-| Hydro_EU | Europe | SSP4-6.0 | 499 | 252 | 81 |
-| Hydro_EU | Europe | SSP5-8.5 | 690 | 629 | 445 |
-| Proj_001 | LATAM | SSP1-1.9 | 102,295 | 73,903 | 14,783 |
-| Proj_001 | LATAM | SSP2-4.5 | 133,912 | 98,181 | 47,863 |
-| Proj_001 | LATAM | SSP3-7.0 | 145,730 | 103,000 | 48,372 |
-| Proj_001 | LATAM | SSP4-6.0 | 132,710 | 99,539 | 50,135 |
-| Proj_001 | LATAM | SSP5-8.5 | 149,100 | 100,780 | 43,841 |
-| Proj_002 | Africa | SSP1-1.9 | 11,667 | 669 | 366 |
-| Proj_002 | Africa | SSP2-4.5 | 12,366 | 8,256 | 3,301 |
-| Proj_002 | Africa | SSP3-7.0 | 12,671 | 8,222 | 3,123 |
-| Proj_002 | Africa | SSP4-6.0 | 13,912 | 10,651 | 5,385 |
-| Proj_002 | Africa | SSP5-8.5 | 12,624 | 7,919 | 2,918 |
-| Proj_003 | Europe | SSP1-1.9 | 14,838 | 7,604 | 2,047 |
-| Proj_003 | Europe | SSP2-4.5 | 20,561 | 16,287 | 8,798 |
-| Proj_003 | Europe | SSP3-7.0 | 22,190 | 20,143 | 11,462 |
-| Proj_003 | Europe | SSP4-6.0 | 16,219 | 8,187 | 2,633 |
-| Proj_003 | Europe | SSP5-8.5 | 22,450 | 20,466 | 14,462 |
-| Rail_EU_DEV | Europe | SSP1-1.9 | 438,784 | 224,855 | 60,527 |
-| Rail_EU_DEV | Europe | SSP2-4.5 | 608,001 | 481,628 | 260,151 |
-| Rail_EU_DEV | Europe | SSP3-7.0 | 656,164 | 595,637 | 338,936 |
-| Rail_EU_DEV | Europe | SSP4-6.0 | 479,615 | 242,108 | 77,851 |
-| Rail_EU_DEV | Europe | SSP5-8.5 | 663,855 | 605,198 | 427,642 |
+| Hydro_AF | Africa | SSP1-1.9 | 15,112 | 866 | 475 |
+| Hydro_AF | Africa | SSP2-4.5 | 16,017 | 10,694 | 4,275 |
+| Hydro_AF | Africa | SSP3-7.0 | 16,413 | 10,649 | 4,045 |
+| Hydro_AF | Africa | SSP4-6.0 | 18,020 | 13,796 | 6,975 |
+| Hydro_AF | Africa | SSP5-8.5 | 16,351 | 10,258 | 3,779 |
+| Hydro_AS | Asia | SSP1-1.9 | 81,359 | 56,976 | 834 |
+| Hydro_AS | Asia | SSP2-4.5 | 79,334 | 53,174 | 20,789 |
+| Hydro_AS | Asia | SSP3-7.0 | 72,911 | 54,425 | 21,077 |
+| Hydro_AS | Asia | SSP4-6.0 | 79,970 | 51,883 | 19,429 |
+| Hydro_AS | Asia | SSP5-8.5 | 71,064 | 84,953 | 38,818 |
+| Hydro_EU | Europe | SSP1-1.9 | 461 | 236 | 64 |
+| Hydro_EU | Europe | SSP2-4.5 | 639 | 506 | 273 |
+| Hydro_EU | Europe | SSP3-7.0 | 690 | 626 | 356 |
+| Hydro_EU | Europe | SSP4-6.0 | 504 | 254 | 82 |
+| Hydro_EU | Europe | SSP5-8.5 | 698 | 636 | 449 |
+| Proj_001 | LATAM | SSP1-1.9 | 103,390 | 74,695 | 14,942 |
+| Proj_001 | LATAM | SSP2-4.5 | 135,346 | 99,233 | 48,376 |
+| Proj_001 | LATAM | SSP3-7.0 | 147,291 | 104,103 | 48,890 |
+| Proj_001 | LATAM | SSP4-6.0 | 134,132 | 100,605 | 50,672 |
+| Proj_001 | LATAM | SSP5-8.5 | 150,697 | 101,859 | 44,310 |
+| Proj_002 | Africa | SSP1-1.9 | 11,790 | 676 | 370 |
+| Proj_002 | Africa | SSP2-4.5 | 12,496 | 8,343 | 3,335 |
+| Proj_002 | Africa | SSP3-7.0 | 12,804 | 8,308 | 3,156 |
+| Proj_002 | Africa | SSP4-6.0 | 14,058 | 10,763 | 5,441 |
+| Proj_002 | Africa | SSP5-8.5 | 12,756 | 8,003 | 2,948 |
+| Proj_003 | Europe | SSP1-1.9 | 14,996 | 7,685 | 2,069 |
+| Proj_003 | Europe | SSP2-4.5 | 20,780 | 16,461 | 8,891 |
+| Proj_003 | Europe | SSP3-7.0 | 22,426 | 20,357 | 11,584 |
+| Proj_003 | Europe | SSP4-6.0 | 16,392 | 8,275 | 2,661 |
+| Proj_003 | Europe | SSP5-8.5 | 22,689 | 20,684 | 14,616 |
+| Rail_EU_DEV | Europe | SSP1-1.9 | 443,404 | 227,223 | 61,164 |
+| Rail_EU_DEV | Europe | SSP2-4.5 | 614,402 | 486,698 | 262,890 |
+| Rail_EU_DEV | Europe | SSP3-7.0 | 663,072 | 601,908 | 342,505 |
+| Rail_EU_DEV | Europe | SSP4-6.0 | 484,664 | 244,657 | 78,671 |
+| Rail_EU_DEV | Europe | SSP5-8.5 | 670,845 | 611,569 | 432,145 |
 | Rail_EU_OP1 | Europe | SSP1-1.9 | 24 | 12 | 3 |
-| Rail_EU_OP1 | Europe | SSP2-4.5 | 33 | 26 | 14 |
+| Rail_EU_OP1 | Europe | SSP2-4.5 | 34 | 27 | 14 |
 | Rail_EU_OP1 | Europe | SSP3-7.0 | 36 | 33 | 19 |
-| Rail_EU_OP1 | Europe | SSP4-6.0 | 26 | 13 | 4 |
-| Rail_EU_OP1 | Europe | SSP5-8.5 | 36 | 33 | 24 |
+| Rail_EU_OP1 | Europe | SSP4-6.0 | 27 | 14 | 4 |
+| Rail_EU_OP1 | Europe | SSP5-8.5 | 37 | 34 | 24 |
 | Rail_EU_OP2 | Europe | SSP1-1.9 | 17 | 9 | 2 |
 | Rail_EU_OP2 | Europe | SSP2-4.5 | 23 | 18 | 10 |
 | Rail_EU_OP2 | Europe | SSP3-7.0 | 25 | 23 | 13 |
 | Rail_EU_OP2 | Europe | SSP4-6.0 | 18 | 9 | 3 |
-| Rail_EU_OP2 | Europe | SSP5-8.5 | 25 | 23 | 16 |
+| Rail_EU_OP2 | Europe | SSP5-8.5 | 26 | 23 | 16 |
 
 ### 3.2 Scenario narrative
 
@@ -194,11 +204,11 @@ Cross-cutting findings from combining all three analytical passes:
 
 | Project | Supply-chain GHG (tCO2e) | WRF | BRF | Revenue at Risk |
 |---------|------------------------|-----|-----|----------------|
-| Proj_001 | 130,595 | 3.48 | 4.09 | USD 42.0M |
-| Hydro_AS | 98,228 | 4.27 | 4.26 | USD 83.0M |
-| Hydro_AF | 21,065 | 3.89 | 3.99 | USD 15.8M |
-| Proj_002 | 16,437 | 3.51 | 3.60 | USD 3.6M |
-| Hydro_EU | 748 | 3.62 | 3.23 | USD 0.8M |
+| Proj_001 | 131,993 | 3.48 | 4.09 | USD 42.0M |
+| Hydro_AS | 99,279 | 4.27 | 4.26 | USD 83.0M |
+| Hydro_AF | 21,290 | 3.89 | 3.99 | USD 15.8M |
+| Proj_002 | 16,610 | 3.51 | 3.60 | USD 3.6M |
+| Hydro_EU | 755 | 3.62 | 3.23 | USD 0.8M |
 
 ### Scenario-risk interaction
 
@@ -245,5 +255,6 @@ Cross-cutting findings from combining all three analytical passes:
 | WWF Risk Filters | WRF 2.0 + BRF 1.0 | 2022 |
 | Financial inputs | Project finance CSVs | 2025 |
 
-Tiers summed: 0 to 5 (captures >99% of supply-chain signal for A spectral radius ≈ 0.52).
+Tiers computed: 0 to 10. Tiers 0–2 in individual tables; tiers 3–10 aggregated.
+Column A spectral radius ≈ 0.52 → geometric decay; tiers >8 contribute <0.1% of signal.
 EUR/USD rate: 1.08 (applied to Rail CAPEX inputs).
