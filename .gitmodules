@@ -23,3 +23,12 @@
 [submodule "aware-cf-calculator"]
 	path = aware-cf-calculator
 	url = https://github.com/PascalLesage/aware_cf_calculator.git
+[submodule "tvp_dbio"]
+	path = tvp_dbio
+	url = https://github.com/d1mitrij/tvp_dbio
+[submodule "tvp_dependency"]
+	path = tvp_dependency
+	url = https://github.com/d1mitrij/tvp_dependency
+[submodule "tvp_scenario"]
+	path = tvp_scenario
+	url = https://github.com/d1mitrij/tvp_scenario
