@@ -1,0 +1,10 @@
+project_id,region,sector,investment_usd_m,revenue_proxy_usd_m,encore_n_material,top_dependency,top_impact,wrf_composite,brf_composite,wrf_high_risk,brf_high_risk,overall_high_risk,revenue_at_risk_usd_m,invest_models_required,wrf_physical,wrf_regulatory,wrf_reputational,brf_species_threat,brf_ecosystem,brf_protected_areas
+Proj_001,latam,Health_Social,250.0,42.0,6,water_supply,mediation_of_solid_waste,3.477,4.087,True,True,True,42.0,"['ndr (water quality)', 'urban_flood_risk_mitigation']",3.788,2.875,3.6,4.74,3.45,3.933
+Proj_002,africa,Health_Specialized,25.0,3.6,6,water_supply,mediation_of_solid_waste,3.513,3.598,True,True,True,3.6,"['ndr (water quality)', 'urban_flood_risk_mitigation']",4.087,2.8,3.15,3.96,3.35,3.367
+Proj_003,europe,Health_General,75.0,12.0,6,water_supply,mediation_of_solid_waste,3.312,2.974,False,False,False,0.0,"['ndr (water quality)', 'urban_flood_risk_mitigation']",2.774,3.75,4.0,2.56,3.025,3.567
+Hydro_AF,africa,Energy,30.0,15.75,8,water_supply,water_supply,3.889,3.994,True,True,True,15.75,"['hydropower_water_yield', 'sdr (sediment delivery)']",4.67,3.08,3.15,4.95,3.35,3.367
+Hydro_AS,asia,Energy,150.0,83.05,8,water_supply,water_supply,4.266,4.259,True,True,True,83.05,"['hydropower_water_yield', 'sdr (sediment delivery)']",4.97,3.438,3.75,5.0,3.55,4.067
+Hydro_EU,europe,Energy,2.0,0.85,8,water_supply,water_supply,3.622,3.231,True,False,True,0.85,"['hydropower_water_yield', 'sdr (sediment delivery)']",3.17,4.125,4.0,3.2,3.025,3.567
+Rail_EU_DEV,europe,Transport,1998.0,55.5,4,flood_and_storm_protection,noise_attenuation,3.378,3.133,False,False,False,0.0,"['habitat_quality', 'carbon_storage']",2.906,3.75,4.0,2.56,3.479,3.567
+Rail_EU_OP1,europe,Transport,0.14,0.0,4,flood_and_storm_protection,noise_attenuation,3.378,3.133,False,False,False,0.0,"['habitat_quality', 'carbon_storage']",2.906,3.75,4.0,2.56,3.479,3.567
+Rail_EU_OP2,europe,Transport,0.1,0.0,4,flood_and_storm_protection,noise_attenuation,3.378,3.133,False,False,False,0.0,"['habitat_quality', 'carbon_storage']",2.906,3.75,4.0,2.56,3.479,3.567
