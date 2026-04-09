@@ -39,12 +39,12 @@ import pandas as pd
 # ──────────────────────────────────────────────────────────────────────────────
 # Repository layout
 # ──────────────────────────────────────────────────────────────────────────────
-ROOT            = Path(__file__).parent
+ROOT            = Path(__file__).parent.parent   # repo root (one level up from project_assessment/)
 DBIO_DIR        = ROOT / "tvp_dbio"
 SCENARIO_DIR    = ROOT / "tvp_scenario"
 DEPENDENCY_DIR  = ROOT / "tvp_dependency"
-INPUT_DIR       = ROOT / "project_assessment" / "modeled_input_data"
-RESULTS_DIR     = ROOT / "results"
+INPUT_DIR       = Path(__file__).parent / "modeled_input_data"
+RESULTS_DIR     = Path(__file__).parent / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
 
 # Make submodules importable

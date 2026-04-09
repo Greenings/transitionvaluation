@@ -1,0 +1,23 @@
+1. Health Sector Assumptions: "The Capacity-to-Cost Link"
+
+The figures for the three hospitals are based on Service Density and Regional Tiering.
+
+Scale Assumption: We assume a Fixed Cost per Beneficiary. For the 5,000,000-person reach, we assume "Systemic Impact" (Primary/Preventative care) at $50/person. For the 3,000-person reach, we assume "High-Intensity Specialization" (Tertiary care/Surgical) at $8,000/person.
+Regional Adjustment: We assume a Purchasing Power Parity (PPP) variance. Construction and medical equipment in LATAM/Africa are modeled with higher "Import Leakage," meaning more of the investment flows out to international medical tech suppliers in the I-O table.
+H&S Assumption: "Improved H&S" is assumed to be the Primary Project Outcome (Clinical capacity), not just site safety for workers.
+
+2. Hydro Sector Assumptions: "The Carbon-Displacement Link"
+
+The Hydro estimates rely on Grid Emission Factors and Technical Retrofit Benchmarks.
+
+Efficiency Gain: We assume the "Turbine Exchange" provides a 10–15% increase in nameplate capacity or efficiency.
+Avoided Emissions ($CO_2$e): We use a Regional Grid Baseline. To avoid 834,000 tons of $CO_2$ in Asia, we assume the hydro plant is displacing "Coal-Heavy" marginal generation. We calculate the MW equivalent by dividing the avoided tons by the local grid’s carbon intensity.
+Cost Factor: We assume a Refurbishment CAPEX of $1,000 per kW of upgraded capacity. This covers the turbine runner, governor, and generator rewinding.
+
+3. Rail Sector Assumptions: "The Modal Shift Link"
+
+The Rail figures are driven by European Infrastructure Standards for 2026.
+
+Passenger Density: For the 5,500,000 ppl/year figure, we assume a Standard Load Factor of 65%. This dictates the "Length of Line" and "Frequency of Service" required, which in turn sets the infrastructure cost.
+Air Quality Contribution: We assume the <1% improvement is achieved through Full Electrification and the removal of diesel rolling stock. The investment includes the "Power-to-Rail" supply chain (substations and catenary).
+Critical Infrastructure: We assume the <5% contribution represents Climate Resilience (e.g., elevated tracks, drainage, and ERTMS signaling). We assume a benchmark of 7% of total CAPEX is dedicated specifically to these "hardened" infrastructure components.

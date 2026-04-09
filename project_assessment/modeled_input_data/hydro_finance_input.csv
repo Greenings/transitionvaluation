@@ -1,0 +1,4 @@
+Project_ID,Region,Sector,Avoided_CO2_Tons,Est_Investment_USD,Impact_Type
+Hydro_AF,Africa,Energy,150000,30000000,Refurbishment
+Hydro_AS,Asia,Energy,834218,150000000,Large_Scale_Retrofit
+Hydro_EU,Europe,Energy,6126,2000000,Efficiency_Tweak
