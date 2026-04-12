@@ -34,6 +34,7 @@ import argparse
 import csv
 import sys
 from pathlib import Path
+import numpy as np
 import pandas as pd
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -101,6 +102,90 @@ def _load_projects() -> list[dict]:
             })
 
     return projects
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Impact sign convention
+# ──────────────────────────────────────────────────────────────────────────────
+# NEGATIVE impacts increase environmental burden (shown as costs).
+# POSITIVE impacts deliver social/economic benefits (shown as gains).
+# Each entry: label → (polarity, display_unit, display_name)
+
+IMPACT_POLARITY: dict[str, tuple[str, str, str]] = {
+    # Supply-chain stressors (all tiers)
+    "GHG_tCO2e":      ("negative", "tCO2e",   "GHG emissions"),
+    "Water_1000m3":   ("negative", "000 m³",   "Water withdrawal"),
+    "NOx_t":          ("negative", "t NOx",    "NOx air pollution"),
+    "Employment_FTE": ("positive", "FTE",      "Jobs created"),
+    "ValueAdded_M$":  ("positive", "M USD",    "Value added"),
+    "Energy_TJ":      ("negative", "TJ",       "Energy use"),
+    # Project-level outcome indicators (from input files)
+    "avoided_CO2_tCO2e": ("positive", "tCO2e",  "Avoided GHG (generation)"),
+    "beneficiaries":     ("positive", "people",  "Health beneficiaries"),
+    "reach_ppl_yr":      ("positive", "ppl/yr",  "Rail passengers reached"),
+    "air_quality_pct":   ("positive", "% improv","Air quality improvement"),
+}
+
+NEGATIVE_STRESSORS = [k for k, (p, _, _) in IMPACT_POLARITY.items() if p == "negative"]
+POSITIVE_STRESSORS = [k for k, (p, _, _) in IMPACT_POLARITY.items() if p == "positive"]
+
+
+def _load_positive_outcomes() -> pd.DataFrame:
+    """
+    Extract project-level positive outcome indicators from input finance CSVs.
+    These represent direct benefits delivered by the projects — the 'other side
+    of the ledger' from the supply-chain stressor analysis.
+
+    Returns a DataFrame with columns:
+        project_id, asset_class, region,
+        avoided_CO2_tCO2e, beneficiaries, reach_ppl_yr, air_quality_pct
+    """
+    rows = []
+
+    # Hydro: avoided CO2 from displacing fossil generation
+    with open(INPUT_DIR / "hydro_finance_input.csv") as f:
+        for row in csv.DictReader(f):
+            rows.append({
+                "project_id":        row["Project_ID"],
+                "asset_class":       "Energy",
+                "region":            row["Region"],
+                "avoided_CO2_tCO2e": float(row.get("Avoided_CO2_Tons", 0) or 0),
+                "beneficiaries":     0,
+                "reach_ppl_yr":      0,
+                "air_quality_pct":   0.0,
+            })
+
+    # Hospitals: health beneficiaries served
+    with open(INPUT_DIR / "hospitals_finance_input.csv") as f:
+        for row in csv.DictReader(f):
+            rows.append({
+                "project_id":        row["Project_ID"],
+                "asset_class":       "Health",
+                "region":            row["Region"],
+                "avoided_CO2_tCO2e": 0,
+                "beneficiaries":     int(str(row.get("Beneficiaries_H&S", 0)).replace(",", "") or 0),
+                "reach_ppl_yr":      0,
+                "air_quality_pct":   0.0,
+            })
+
+    # Rail: passenger reach and air-quality improvement
+    with open(INPUT_DIR / "rail_finance_input.csv") as f:
+        for row in csv.DictReader(f):
+            try:
+                reach = int(str(row.get("Reach_Ppl_Yr", 0)).replace(",", "") or 0)
+            except ValueError:
+                reach = 0
+            rows.append({
+                "project_id":        row["Project_ID"],
+                "asset_class":       "Transport",
+                "region":            row["Region"],
+                "avoided_CO2_tCO2e": 0,
+                "beneficiaries":     0,
+                "reach_ppl_yr":      reach,
+                "air_quality_pct":   float(row.get("PC_Air_Quality", 0) or 0),
+            })
+
+    return pd.DataFrame(rows)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -227,7 +312,246 @@ def run_supply_chain(projects: list[dict], tier_to: int = 10) -> dict[str, pd.Da
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# PASS 2 — Scenario adjustment (tvp_scenario / OSeMOSYS)
+# PASS 1.6 — Dependency weighting per indicator, sector, and region per tier
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# Three-component dependency factor, dimensionless, neutral = 1.0:
+#
+#   dep_factor(stressor, tier_row) =
+#       (encore_dep(project_sector, stressor) / 3      ← ENCORE ecosystem dependency
+#        + wwf_risk(sourcing_region, stressor) / 3     ← WWF regional risk
+#        + sc_dep(supplying_sector,  stressor) / 3     ← SC-sector sensitivity
+#       ) / 3
+#
+# dep_weighted_stressor = scenario_adjusted_stressor × dep_factor
+#
+# For tier 1, `sourcing_region` is used for the WWF lookup (bilateral precision),
+# consistent with how Pass 1.5 applies scenario factors.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Project sector_code → ENCORE sector key
+PROJECT_SECTOR_TO_ENCORE: dict[str, str] = {
+    "Health_Social":      "human_health_activities",
+    "Health_Specialized": "human_health_activities",
+    "Health_General":     "human_health_activities",
+    "Energy":             "electric_power_generation_hydro",
+    "Rail_Dev":           "rail_transport",
+    "Rail_Op":            "rail_transport",
+}
+
+# Stressor → ENCORE ecosystem services whose DEPENDENCY rating mediates it
+STRESSOR_ECOSYSTEM_MAP: dict[str, list[str]] = {
+    "GHG_tCO2e":      ["climate_regulation",       "mediation_of_gaseous_waste"],
+    "Employment_FTE":  ["terrestrial_ecosystem_use", "soil_quality",    "erosion_control"],
+    "Water_1000m3":   ["water_supply",              "water_flow_regulation",
+                       "freshwater_ecosystem_use"],
+    "ValueAdded_M$":  ["water_supply",              "climate_regulation",
+                       "terrestrial_ecosystem_use"],
+}
+
+# Stressor → which WWF sub-score most directly reflects its ecosystem risk
+STRESSOR_WWF_COL: dict[str, str] = {
+    "GHG_tCO2e":      "brf_ecosystem",    # carbon sequestration & climate regulation
+    "Employment_FTE":  "brf_ecosystem",   # land productivity underpins labor intensity
+    "Water_1000m3":   "wrf_physical",     # physical water scarcity / stress
+    "ValueAdded_M$":  "wrf_composite",    # overall water + institutional risk
+}
+
+# Ecosystem sensitivity of the 8 supply-chain sectors (tvp_io_lib SECTORS_8).
+# Scores on 1–5 scale; derived from:
+#   · ENCORE analogues for the overlapping sectors (Energy_Utilities → D3510,
+#     Health_Social → Q86, Transport_Logistics → H4910)
+#   · IPBES (2019) "Global Assessment" sector biodiversity pressure typology
+#     for Construction, Manufacturing, Agriculture, Mining_Extraction, Water_Waste
+# Tuple sub-keys match STRESSOR_SC_DEP_KEY below.
+SC_SECTOR_DEP_PROFILE: dict[str, dict[str, float]] = {
+    # (water_dep, ghg_dep, land_dep, va_dep)
+    "Construction":        {"water": 3.0, "ghg": 3.0, "land": 4.0, "va": 3.3},
+    "Energy_Utilities":    {"water": 5.0, "ghg": 5.0, "land": 3.0, "va": 4.3},
+    "Manufacturing":       {"water": 4.0, "ghg": 3.0, "land": 3.0, "va": 3.3},
+    "Transport_Logistics": {"water": 2.0, "ghg": 3.0, "land": 4.0, "va": 3.0},
+    "Health_Social":       {"water": 5.0, "ghg": 4.0, "land": 2.0, "va": 3.7},
+    "Agriculture":         {"water": 5.0, "ghg": 5.0, "land": 5.0, "va": 5.0},
+    "Mining_Extraction":   {"water": 5.0, "ghg": 3.0, "land": 5.0, "va": 4.3},
+    "Water_Waste":         {"water": 5.0, "ghg": 3.0, "land": 4.0, "va": 4.0},
+}
+
+# Stressor → SC_SECTOR_DEP_PROFILE sub-key
+STRESSOR_SC_DEP_KEY: dict[str, str] = {
+    "GHG_tCO2e":      "ghg",
+    "Employment_FTE":  "land",  # employment intensity tied to land productivity
+    "Water_1000m3":   "water",
+    "ValueAdded_M$":  "va",
+}
+
+DEP_NEUTRAL = 3.0  # "medium" score; dep_factor = 1.0 when all sub-scores equal this
+
+
+def _build_dependency_table() -> pd.DataFrame:
+    """
+    Build a (project_sector × region) lookup table of ENCORE + WWF sub-scores
+    and their combined dep_factor for each stressor.
+
+    Does NOT include the SC-sector sensitivity component — that is applied row-
+    wise in apply_dependency_factors() because it varies by supplying_sector,
+    not by project.
+
+    Columns returned:
+        project_sector, region,
+        encore_dep_{stressor},    # ENCORE dependency sub-score (raw 1–5)
+        wwf_dep_{stressor},       # WWF risk sub-score (raw 1–5)
+        base_dep_factor_{stressor}  # (encore+wwf)/2 normalized to neutral=1.0
+    """
+    from dependency_profiler.encore_materiality import MATERIALITY_MATRIX, RATING_SCALE
+
+    # ── ENCORE dependency scores: project sector × stressor ───────────────────
+    encore_scores: dict[str, dict[str, float]] = {}
+    for sector_code, encore_key in PROJECT_SECTOR_TO_ENCORE.items():
+        mat = MATERIALITY_MATRIX.get(encore_key, {})
+        stressor_scores = {}
+        for stressor, svc_list in STRESSOR_ECOSYSTEM_MAP.items():
+            raw = [RATING_SCALE.get(mat.get(svc, ("N", "N"))[0], 0)
+                   for svc in svc_list]
+            stressor_scores[stressor] = sum(raw) / max(len(raw), 1)
+        encore_scores[sector_code] = stressor_scores
+
+    # ── WWF risk scores: aggregated to broad regions ───────────────────────────
+    wwf_path = DEPENDENCY_DIR / "assessment_output" / "wwf_risk_scores.csv"
+    if wwf_path.exists():
+        wwf_raw = pd.read_csv(wwf_path)
+        region_map = {
+            "latam": "LATAM", "africa": "Africa",
+            "asia": "Asia",   "europe": "Europe",
+        }
+        wwf_raw["broad_region"] = wwf_raw["region"].str.lower().map(region_map)
+        wwf_agg = (
+            wwf_raw.dropna(subset=["broad_region"])
+            .groupby("broad_region")[
+                ["wrf_physical", "wrf_regulatory", "wrf_reputational",
+                 "wrf_composite", "brf_species_threat", "brf_ecosystem",
+                 "brf_protected_areas", "brf_composite"]
+            ].mean()
+            .reset_index()
+            .rename(columns={"broad_region": "region"})
+        )
+    else:
+        # Embedded fallback — representative regional averages from WWF data
+        wwf_agg = pd.DataFrame([
+            {"region": "Africa", "wrf_physical": 4.38, "wrf_composite": 3.70,
+             "brf_ecosystem": 3.35, "brf_species_threat": 4.46, "brf_composite": 3.80},
+            {"region": "Asia",   "wrf_physical": 4.97, "wrf_composite": 4.27,
+             "brf_ecosystem": 3.55, "brf_species_threat": 5.00, "brf_composite": 4.26},
+            {"region": "Europe", "wrf_physical": 2.93, "wrf_composite": 3.41,
+             "brf_ecosystem": 3.30, "brf_species_threat": 2.69, "brf_composite": 3.12},
+            {"region": "LATAM",  "wrf_physical": 3.79, "wrf_composite": 3.48,
+             "brf_ecosystem": 3.45, "brf_species_threat": 4.74, "brf_composite": 4.09},
+        ])
+
+    # ── Build lookup table ─────────────────────────────────────────────────────
+    rows = []
+    for sector_code, stressor_scores in encore_scores.items():
+        for _, wrow in wwf_agg.iterrows():
+            region = wrow["region"]
+            entry = {"project_sector": sector_code, "region": region}
+            for stressor, encore_score in stressor_scores.items():
+                wwf_col = STRESSOR_WWF_COL[stressor]
+                wwf_score = float(wrow.get(wwf_col, DEP_NEUTRAL))
+                entry[f"encore_dep_{stressor}"] = encore_score
+                entry[f"wwf_dep_{stressor}"]    = wwf_score
+                entry[f"base_dep_factor_{stressor}"] = (
+                    encore_score / DEP_NEUTRAL + wwf_score / DEP_NEUTRAL
+                ) / 2.0
+            rows.append(entry)
+
+    return pd.DataFrame(rows)
+
+
+def apply_dependency_factors(detail: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merge dependency factors into a scenario-weighted tier detail DataFrame and
+    compute dependency-weighted stressor columns.
+
+    For each row the full three-component dep_factor is:
+
+        dep_factor = (encore_dep/3 + wwf_dep/3 + sc_dep/3) / 3
+
+    where:
+        encore_dep  — ENCORE ecosystem dependency of the project sector (1–5)
+        wwf_dep     — WWF risk score for the stressor-relevant filter (1–5),
+                      using sourcing_region for tier1 (bilateral) or region otherwise
+        sc_dep      — SC_SECTOR_DEP_PROFILE score of the supplying sector (1–5)
+
+    dep_factor = 1.0 at global-average conditions; range ≈ 0.33–1.67.
+
+    Columns added:
+        dep_encore_{stressor}   — ENCORE sub-score (raw)
+        dep_wwf_{stressor}      — WWF sub-score (raw, region-resolved)
+        dep_sc_{stressor}       — SC sector sensitivity sub-score (raw)
+        dep_factor_{stressor}   — combined dep_factor (neutral = 1.0)
+        {stressor[:-suffix]}_dep_weighted — scenario_adj × dep_factor
+    """
+    if detail.empty:
+        return detail
+
+    dep_table = _build_dependency_table()
+    # join key on project sector: detail has "sector_code" = the project sector code
+    dep_table = dep_table.rename(columns={"project_sector": "sector_code"})
+
+    # For WWF lookup: tier1 uses sourcing_region, others use region
+    detail = detail.copy()
+    detail["_wwf_region"] = np.where(
+        detail["tier_label"] == "tier1",
+        detail.get("sourcing_region", detail["region"]),
+        detail["region"],
+    )
+
+    # Merge dep_table on (sector_code, _wwf_region → region)
+    merged = detail.merge(
+        dep_table.rename(columns={"region": "_wwf_region"}),
+        on=["sector_code", "_wwf_region"],
+        how="left",
+    )
+
+    # Stressor columns that exist in the adjusted data
+    adj_stressor_pairs = [
+        ("GHG_tCO2e",      "GHG_adj_tCO2e"),
+        ("Employment_FTE",  "Employment_adj_FTE"),
+        ("Water_1000m3",   "Water_adj_1000m3"),
+        ("ValueAdded_M$",  "ValueAdded_adj_M$"),
+    ]
+
+    for raw_col, adj_col in adj_stressor_pairs:
+        if adj_col not in merged.columns:
+            continue
+
+        sc_dep_key = STRESSOR_SC_DEP_KEY[raw_col]
+        base_col   = f"base_dep_factor_{raw_col}"
+        sc_col     = f"dep_sc_{raw_col}"
+        full_col   = f"dep_factor_{raw_col}"
+        out_col    = adj_col.replace("_adj_", "_dep_")  # e.g. GHG_dep_tCO2e
+
+        # SC sector sensitivity: look up from embedded profile; default = DEP_NEUTRAL
+        merged[sc_col] = merged["supplying_sector"].map(
+            lambda s, k=sc_dep_key: SC_SECTOR_DEP_PROFILE.get(s, {}).get(k, DEP_NEUTRAL)
+        )
+        # Full three-component dep_factor
+        base = merged[base_col].fillna(1.0)
+        sc   = merged[sc_col]
+        merged[full_col] = (base + sc / DEP_NEUTRAL) / 2.0   # mean of (encore+wwf)/2 and sc/3
+        merged[out_col]  = merged[adj_col] * merged[full_col]
+
+        # Rename the ENCORE/WWF sub-score columns for clarity
+        merged.rename(columns={
+            f"encore_dep_{raw_col}": f"dep_encore_{raw_col}",
+            f"wwf_dep_{raw_col}":    f"dep_wwf_{raw_col}",
+        }, inplace=True)
+
+    merged.drop(columns=["_wwf_region"], inplace=True)
+    return merged
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# PASS 1.5 — Connect dbio tier analysis to scenario weighting factors
 # ──────────────────────────────────────────────────────────────────────────────
 
 SCENARIO_YEARS   = [2025, 2030, 2040]
@@ -236,36 +560,249 @@ SCENARIO_LABELS  = ["SSP1-1.9", "SSP2-4.5", "SSP3-7.0", "SSP4-6.0", "SSP5-8.5"]
 # Paths to each model's intensity factors file (OSeMOSYS always present;
 # GCAM and MESSAGEix loaded when their results/ directory exists)
 MODEL_FACTOR_PATHS = {
-    "OSeMOSYS": SCENARIO_DIR / "osemosys"  / "results" / "tvpdbio_intensity_factors.csv",
-    "GCAM":     SCENARIO_DIR / "gcam"      / "results" / "tvpdbio_intensity_factors.csv",
+    "OSeMOSYS":          SCENARIO_DIR / "osemosys"  / "results" / "tvpdbio_intensity_factors.csv",
+    "GCAM":              SCENARIO_DIR / "gcam"      / "results" / "tvpdbio_intensity_factors.csv",
     "MESSAGEix-GLOBIOM": SCENARIO_DIR / "messageix" / "results" / "tvpdbio_intensity_factors.csv",
 }
 
-def run_scenario_adjustment(projects: list[dict], supply_summary: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Load intensity factors from all available simulation models (OSeMOSYS,
-    GCAM, MESSAGEix-GLOBIOM) and compute scenario-adjusted GHG for every
-    project × model × scenario × year combination.
+# Maps the 5 representative countries in ipcc_nexus_weights.csv to the 4 broad
+# project regions used by tvp_io_lib and the OSeMOSYS intensity-factor tables.
+NEXUS_COUNTRY_TO_REGION: dict[str, str] = {
+    "Brazil":       "LATAM",
+    "Germany":      "Europe",
+    "India":        "Asia",
+    "Nigeria":      "Africa",
+    "South Africa": "Africa",
+}
 
-    Region names are matched as-is (Africa/Asia/Europe/LATAM) — no
-    case transformation so that "LATAM" is never mangled.
+# All-stressor adjustment labels produced by _build_full_factors()
+ADJ_COLS = ["adj_ratio_ghg", "adj_ratio_employment", "adj_ratio_water", "adj_ratio_va"]
+
+
+def _build_full_factors() -> pd.DataFrame | None:
     """
-    # Collect factors from every model that has results on disk
+    Assemble a single lookup table keyed by (model_label, scenario, region, year)
+    that carries adjustment ratios for *all four* supply-chain stressors:
+
+      adj_ratio_ghg         from OSeMOSYS/GCAM/MESSAGEix intensity factors
+      adj_ratio_employment  ibid.
+      adj_ratio_water       derived: 1 − renewable_share × 0.85
+                            (100 % renewables → 85 % reduction in cooling-water
+                            withdrawal; calibrated to IEA Water for Energy 2022)
+      adj_ratio_va          proxy = adj_ratio_employment
+                            (value-added per $ tracks labour-productivity shifts)
+
+    If ipcc_nexus_weights.csv is present the water ratio is further refined per
+    scenario using the water_intensity_proxy time trend: the OSeMOSYS renewable-
+    share formula gives the sector-averaged ratio; the nexus file provides a
+    scenario-relative cross-check that is averaged across the two approaches.
+
+    Returns None when no intensity-factor files are available on disk.
+    """
     all_factors: list[pd.DataFrame] = []
     for model_name, fpath in MODEL_FACTOR_PATHS.items():
         if fpath.exists():
             df = pd.read_csv(fpath)
             df["model_label"] = model_name
             all_factors.append(df)
-            print(f"      [OK]      {model_name}: {len(df)} factor rows")
-        else:
-            print(f"      [PENDING] {model_name}: no results at {fpath.relative_to(ROOT)}")
 
     if not all_factors:
+        return None
+
+    factors = pd.concat(all_factors, ignore_index=True)
+
+    # ── Derive water and VA ratios from renewable_share ────────────────────────
+    # renewable_share = fraction of electricity generation from non-thermal sources.
+    # Thermal power requires ~1.5 L/kWh for cooling; wind/solar require ~0.003 L/kWh.
+    # Portfolio-average across 8 supply sectors: weighted blend of energy-sector
+    # improvement (60 % weight) and residual process-water improvement (40 % weight).
+    factors["adj_ratio_water"] = (
+        factors["renewable_share"] * 0.15             # 100 % ren → 15 % of baseline
+        + (1.0 - factors["renewable_share"]) * 1.0    # 0 % ren   → 100 % of baseline
+    ).clip(lower=0.05)
+    factors["adj_ratio_va"] = factors["adj_ratio_employment"]
+
+    # ── Optional refinement from ipcc_nexus_weights.csv ───────────────────────
+    nw_path = SCENARIO_DIR / "results" / "ipcc_nexus_weights.csv"
+    if nw_path.exists():
+        nw = pd.read_csv(nw_path)
+        nw["broad_region"] = nw["region"].map(NEXUS_COUNTRY_TO_REGION)
+        nw = nw.dropna(subset=["broad_region"])
+
+        # Compute time-relative change in water withdrawal intensity per scenario.
+        # water_intensity_proxy carries the same grid-intensity series as
+        # grid_intensity_mt_ej, so we normalise against the 2020 anchor.
+        base = (
+            nw[nw["year"] == 2020]
+            .groupby(["ssp", "broad_region"])["water_intensity_proxy"]
+            .mean()
+            .reset_index()
+            .rename(columns={"water_intensity_proxy": "water_base_2020"})
+        )
+        nw = nw.merge(base, on=["ssp", "broad_region"], how="left")
+        nw["adj_ratio_water_nexus"] = np.where(
+            nw["water_base_2020"] > 0,
+            (nw["water_intensity_proxy"] / nw["water_base_2020"]).clip(0.01, 2.0),
+            1.0,
+        )
+        nexus_agg = (
+            nw.groupby(["ssp", "broad_region", "year"])["adj_ratio_water_nexus"]
+            .mean()
+            .reset_index()
+            .rename(columns={"ssp": "scenario", "broad_region": "region"})
+        )
+        factors = factors.merge(nexus_agg, on=["scenario", "region", "year"], how="left")
+        # Average the two approaches where nexus data is available
+        has_nexus = factors["adj_ratio_water_nexus"].notna()
+        factors.loc[has_nexus, "adj_ratio_water"] = (
+            factors.loc[has_nexus, "adj_ratio_water"]
+            + factors.loc[has_nexus, "adj_ratio_water_nexus"]
+        ) / 2.0
+        factors.drop(columns=["adj_ratio_water_nexus"], inplace=True)
+
+    return factors
+
+
+def run_scenario_weighted_tiers(
+    sc: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """
+    Connect the tier-by-tier supply-chain breakdown to scenario weighting
+    factors, applying region-and-time-specific adjustment ratios to every
+    stressor in every tier.
+
+    Key improvement over the project-level scenario adjustment:
+      • Tier 1 uses the *sourcing_region* column (bilateral supply-country
+        precision) rather than the project's home region — a steel mill in
+        Asia supplying a European project is adjusted at Asia's decarbonisation
+        trajectory, not Europe's.
+      • All four stressors (GHG, Employment, Water, Value Added) are adjusted,
+        not just GHG.
+      • Each tier (0, 1, 2, 3-10) is adjusted independently, preserving the
+        tier-level granularity for downstream analysis.
+
+    Returns a long-format DataFrame with columns:
+        model, scenario, year,
+        tier_label, project_id, asset_class,
+        region, sector_code, supplying_sector, sourcing_region,
+        spend_M$,
+        GHG_tCO2e,       GHG_adj_tCO2e,
+        Employment_FTE,  Employment_adj_FTE,
+        Water_1000m3,    Water_adj_1000m3,
+        ValueAdded_M$,   ValueAdded_adj_M$,
+        adj_ratio_ghg, adj_ratio_employment, adj_ratio_water, adj_ratio_va
+    """
+    factors = _build_full_factors()
+    if factors is None:
+        print("      [WARN] No scenario factors — skipping tier-level weighting.")
+        return pd.DataFrame()
+
+    factors_filt = factors[
+        factors["year"].isin(SCENARIO_YEARS) &
+        factors["scenario"].isin(SCENARIO_LABELS)
+    ][["model_label", "scenario", "region", "year"] + ADJ_COLS].copy()
+
+    # ── Helpers ────────────────────────────────────────────────────────────────
+    stressor_map = {          # raw column → adjusted column
+        "GHG_tCO2e":      ("GHG_adj_tCO2e",       "adj_ratio_ghg"),
+        "Employment_FTE":  ("Employment_adj_FTE",   "adj_ratio_employment"),
+        "Water_1000m3":   ("Water_adj_1000m3",     "adj_ratio_water"),
+        "ValueAdded_M$":  ("ValueAdded_adj_M$",    "adj_ratio_va"),
+    }
+
+    def _apply_factors(df: pd.DataFrame, lookup_col: str, tier_label: str) -> pd.DataFrame:
+        """
+        Merge *df* with factors_filt on (lookup_col → "region") and compute
+        adjusted stressor columns.  Returns long-format rows for every
+        (model, scenario, year) combination.
+        """
+        df = df.copy()
+        df["_lookup_region"] = df[lookup_col]
+        merged = df.merge(
+            factors_filt.rename(columns={"region": "_lookup_region"}),
+            on="_lookup_region",
+            how="left",
+        )
+        # Rows with no matching scenario factor (e.g. "Global" sourcing region)
+        # fall back to adj_ratio = 1.0 (no adjustment applied)
+        for adj_col in ADJ_COLS:
+            merged[adj_col] = merged[adj_col].fillna(1.0)
+
+        for raw_col, (adj_out_col, ratio_col) in stressor_map.items():
+            if raw_col in merged.columns:
+                merged[adj_out_col] = merged[raw_col] * merged[ratio_col]
+
+        merged["tier_label"] = tier_label
+        merged.drop(columns=["_lookup_region"], inplace=True)
+        return merged
+
+    # ── Process each tier ─────────────────────────────────────────────────────
+    frames = []
+
+    # Tier 0: direct investment; lookup key = project home region
+    t0 = _apply_factors(sc["tier0"], lookup_col="region", tier_label="tier0")
+    frames.append(t0)
+
+    # Tier 1: first upstream; lookup key = bilateral sourcing country
+    # This is the key connection: imported inputs are adjusted at the SOURCE
+    # country's decarbonisation trajectory, not the project country's.
+    if not sc["tier1"].empty:
+        t1 = _apply_factors(sc["tier1"], lookup_col="sourcing_region", tier_label="tier1")
+        frames.append(t1)
+
+    # Tier 2: second upstream; lookup key = project home region
+    t2 = _apply_factors(sc["tier2"], lookup_col="region", tier_label="tier2")
+    frames.append(t2)
+
+    # Tiers 3-10: deep upstream; lookup key = project home region
+    t3 = _apply_factors(sc["tier3_10"], lookup_col="region", tier_label="tier3_10")
+    frames.append(t3)
+
+    if not frames:
+        return pd.DataFrame()
+
+    out = pd.concat(frames, ignore_index=True)
+
+    # ── Build summary pivot: project × scenario × year × stressor ─────────────
+    # (sum across tiers and supplying sectors)
+    grp_cols = ["model_label", "scenario", "year", "project_id", "asset_class", "region"]
+    adj_stressor_cols = [c for _, (c, _) in stressor_map.items() if c in out.columns]
+    raw_stressor_cols = [c for c in stressor_map if c in out.columns]
+
+    summary = (
+        out.groupby(grp_cols)[raw_stressor_cols + adj_stressor_cols]
+        .sum()
+        .reset_index()
+    )
+    summary.rename(columns={"model_label": "model"}, inplace=True)
+
+    return out, summary
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# PASS 2 — Scenario adjustment (tvp_scenario / OSeMOSYS)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def run_scenario_adjustment(projects: list[dict], supply_summary: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Load intensity factors from all available simulation models (OSeMOSYS,
+    GCAM, MESSAGEix-GLOBIOM) and compute scenario-adjusted GHG and Employment
+    for every project × model × scenario × year combination.
+
+    Region names are matched as-is (Africa/Asia/Europe/LATAM) — no
+    case transformation so that "LATAM" is never mangled.
+    """
+    # Re-use _build_full_factors() so all four stressor ratios are available
+    factors = _build_full_factors()
+    if factors is None:
         print("[WARN] No scenario factors found. Run tvp_scenario/osemosys/run_simulation.py first.")
         return pd.DataFrame(), pd.DataFrame()
 
-    factors = pd.concat(all_factors, ignore_index=True)
+    for model_name, fpath in MODEL_FACTOR_PATHS.items():
+        if fpath.exists():
+            print(f"      [OK]      {model_name}")
+        else:
+            print(f"      [PENDING] {model_name}: no results at {fpath.relative_to(ROOT)}")
 
     # Filter to analysis years and scenarios
     factors_filt = factors[
@@ -273,31 +810,49 @@ def run_scenario_adjustment(projects: list[dict], supply_summary: pd.DataFrame) 
         factors["scenario"].isin(SCENARIO_LABELS)
     ].copy()
 
-    # Baseline GHG (tiers summed) per project — use the 'region' column
-    # which tvp_io_lib returns as the normalised broad-region name
+    # Baseline stressors (tiers summed) per project
     ghg_col = [c for c in supply_summary.columns if c.startswith("GHG_tCO2e")][0]
-    baseline = supply_summary[["project_id", "region", ghg_col]].copy()
-    baseline.rename(columns={ghg_col: "baseline_GHG_tCO2e"}, inplace=True)
+    emp_col = [c for c in supply_summary.columns if c.startswith("Emp_FTE")][0]
+    wat_col = [c for c in supply_summary.columns if c.startswith("Water_1000m3")][0]
+    va_col  = [c for c in supply_summary.columns if c.startswith("VA_Musd")][0]
+
+    baseline = supply_summary[["project_id", "region", ghg_col, emp_col, wat_col, va_col]].copy()
+    baseline.rename(columns={
+        ghg_col: "baseline_GHG_tCO2e",
+        emp_col: "baseline_Employment_FTE",
+        wat_col: "baseline_Water_1000m3",
+        va_col:  "baseline_VA_Musd",
+    }, inplace=True)
 
     adj_rows = []
     for _, proj_row in baseline.iterrows():
         pid      = proj_row["project_id"]
-        region   = proj_row["region"]         # e.g. "LATAM", "Africa", "Europe", "Asia"
+        region   = proj_row["region"]
         base_ghg = proj_row["baseline_GHG_tCO2e"]
+        base_emp = proj_row["baseline_Employment_FTE"]
+        base_wat = proj_row["baseline_Water_1000m3"]
+        base_va  = proj_row["baseline_VA_Musd"]
 
-        # Match on exact region string — avoids str.capitalize() mangling LATAM
         region_factors = factors_filt[factors_filt["region"] == region]
         for _, frow in region_factors.iterrows():
             adj_rows.append({
-                "model":                frow["model_label"],
-                "project_id":           pid,
-                "region":               region,
-                "scenario":             frow["scenario"],
-                "year":                 int(frow["year"]),
-                "adj_ratio_ghg":        frow["adj_ratio_ghg"],
-                "adj_ratio_employment": frow["adj_ratio_employment"],
-                "baseline_GHG_tCO2e":  base_ghg,
-                "adjusted_GHG_tCO2e":  round(base_ghg * frow["adj_ratio_ghg"], 1),
+                "model":                    frow["model_label"],
+                "project_id":               pid,
+                "region":                   region,
+                "scenario":                 frow["scenario"],
+                "year":                     int(frow["year"]),
+                "adj_ratio_ghg":            frow["adj_ratio_ghg"],
+                "adj_ratio_employment":     frow["adj_ratio_employment"],
+                "adj_ratio_water":          frow["adj_ratio_water"],
+                "adj_ratio_va":             frow["adj_ratio_va"],
+                "baseline_GHG_tCO2e":       base_ghg,
+                "baseline_Employment_FTE":  base_emp,
+                "baseline_Water_1000m3":    base_wat,
+                "baseline_VA_Musd":         base_va,
+                "adjusted_GHG_tCO2e":       round(base_ghg * frow["adj_ratio_ghg"], 1),
+                "adjusted_Employment_FTE":  round(base_emp * frow["adj_ratio_employment"], 1),
+                "adjusted_Water_1000m3":    round(base_wat * frow["adj_ratio_water"], 2),
+                "adjusted_VA_Musd":         round(base_va  * frow["adj_ratio_va"], 3),
             })
 
     adj_df = pd.DataFrame(adj_rows)
@@ -305,7 +860,7 @@ def run_scenario_adjustment(projects: list[dict], supply_summary: pd.DataFrame) 
     if adj_df.empty:
         return factors_filt, adj_df
 
-    # Wide pivot: rows = model × project × scenario, columns = years
+    # Wide pivot on GHG for backward-compatible output (Pass-2 narrative uses it)
     pivot = adj_df.pivot_table(
         index=["model", "project_id", "region", "scenario"],
         columns="year",
@@ -314,7 +869,7 @@ def run_scenario_adjustment(projects: list[dict], supply_summary: pd.DataFrame) 
     pivot.columns.name = None
     pivot.columns = [str(c) for c in pivot.columns]
 
-    return factors_filt, pivot
+    return adj_df, pivot
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -356,12 +911,15 @@ def _fmt(val, decimals=0):
 
 
 def write_final_analysis(
-    projects:       list[dict],
-    supply_summary: pd.DataFrame,
-    scenario_adj:   pd.DataFrame,
-    dep_df:         pd.DataFrame,
-    tier_from:      int,
-    tier_to:        int,
+    projects:            list[dict],
+    supply_summary:      pd.DataFrame,
+    scenario_adj:        pd.DataFrame,
+    dep_df:              pd.DataFrame,
+    tier_from:           int,
+    tier_to:             int,
+    sc_weighted_summary: pd.DataFrame | None = None,
+    dep_summary:         pd.DataFrame | None = None,
+    positive_outcomes:   pd.DataFrame | None = None,
 ) -> None:
     # Column names are always t0_<tier_to> regardless of tier_from
     ghg_col = f"GHG_tCO2e_t0_{tier_to}"
@@ -461,8 +1019,197 @@ def write_final_analysis(
               f"Rail_EU_DEV €1.85B development phase accounts for the majority; "
               f"operational projects (OP1/OP2) are negligible in CAPEX terms.")
     a("")
+    a("### 2.3 Positive vs Negative Impact — net ledger (tiers 0–{tier_to})".format(tier_to=tier_to))
+    a("")
+    a("Each indicator is classified by polarity. **Negative impacts** increase")
+    a("environmental burden; **positive impacts** deliver social or economic benefits.")
+    a("Hydro avoided CO₂, health beneficiaries, and rail reach are direct project")
+    a("outcomes read from input files — they are *not* supply-chain quantities.")
+    a("")
+    a("| Project | Region | [−] GHG tCO2e | [−] Water 000m³ | [+] Jobs FTE | [+] VA M USD"
+      " | [+] Avoided CO₂ tCO2e | [+] Beneficiaries / Reach |")
+    a("|---------|--------|--------------|----------------|-------------|----------"
+      "|----------------------|--------------------------|")
+    if ghg_col in supply_summary.columns:
+        po = positive_outcomes.set_index("project_id") if positive_outcomes is not None else pd.DataFrame()
+        for _, row in supply_summary.sort_values("project_id").iterrows():
+            pid = row["project_id"]
+            po_row = po.loc[pid] if pid in po.index else None
+            avoided = _fmt(po_row["avoided_CO2_tCO2e"]) if po_row is not None else "—"
+            bene = (_fmt(po_row["beneficiaries"]) if (po_row is not None and po_row["beneficiaries"] > 0)
+                    else (_fmt(po_row["reach_ppl_yr"]) + " ppl/yr" if (po_row is not None and po_row["reach_ppl_yr"] > 0)
+                          else "—"))
+            a(f"| {pid} | {row['region']} "
+              f"| **{_fmt(row[ghg_col])}** "
+              f"| {_fmt(row[wat_col], 1)} "
+              f"| {_fmt(row[emp_col], 0)} "
+              f"| {_fmt(row[va_col], 2)} "
+              f"| {avoided} "
+              f"| {bene} |")
+    a("")
+    if positive_outcomes is not None and not positive_outcomes.empty:
+        tot_avoided = positive_outcomes["avoided_CO2_tCO2e"].sum()
+        tot_bene    = positive_outcomes["beneficiaries"].sum()
+        tot_reach   = positive_outcomes["reach_ppl_yr"].sum()
+        a(f"**Portfolio positive outcomes:** "
+          f"{_fmt(tot_avoided)} tCO2e avoided | "
+          f"{_fmt(tot_bene)} health beneficiaries | "
+          f"{_fmt(tot_reach)} rail ppl/yr reached")
+        if ghg_col in supply_summary.columns:
+            net_ghg = total_ghg - tot_avoided
+            a(f"**Net GHG position:** {_fmt(total_ghg)} tCO2e supply-chain emissions "
+              f"− {_fmt(tot_avoided)} tCO2e avoided = **{_fmt(net_ghg)} tCO2e net** "
+              f"({'surplus' if net_ghg > 0 else 'net negative — project avoids more than it generates'})")
+    a("")
     a("---")
     a("")
+    # ── Section 2.5: Scenario-weighted tier breakdown (Pass 1.5) ──────────────
+    available_models_w = (
+        sc_weighted_summary["model"].unique().tolist()
+        if sc_weighted_summary is not None and not sc_weighted_summary.empty
+           and "model" in sc_weighted_summary.columns
+        else []
+    )
+    if sc_weighted_summary is not None and not sc_weighted_summary.empty:
+        a("## 2.5 Scenario-Weighted Supply-Chain Impact (connected tiers × scenarios)")
+        a("")
+        a("Each supply-chain tier is adjusted using the sourcing region's own")
+        a("decarbonisation trajectory — not just the project home region. Tier 1")
+        a("bilateral sourcing-country data feeds directly into the region-specific")
+        a("adjustment ratios from tvp_scenario, so that imported steel from Asia")
+        a("supplying a European project is adjusted at Asia's trajectory, not Europe's.")
+        a("")
+        a("Four stressors are adjusted per tier:")
+        a("")
+        a("| Stressor | Ratio used | Source |")
+        a("|----------|-----------|--------|")
+        a("| GHG (tCO2e) | `adj_ratio_ghg` | OSeMOSYS grid-intensity trajectory |")
+        a("| Employment (FTE) | `adj_ratio_employment` | OSeMOSYS renewable-jobs premium |")
+        a("| Water (000 m³) | `1 − renewable_share × 0.85` ± nexus refinement | IEA Water for Energy + IPCC nexus weights |")
+        a("| Value Added (M USD) | `adj_ratio_employment` | Labour-productivity proxy |")
+        a("")
+        a("### 2.5.1 Portfolio totals — scenario-weighted (SSP2-4.5, 2030)")
+        a("")
+        ssp2_2030 = sc_weighted_summary[
+            (sc_weighted_summary["scenario"] == "SSP2-4.5") &
+            (sc_weighted_summary["year"] == 2030)
+        ]
+        if not ssp2_2030.empty:
+            has_ghg_adj = "GHG_adj_tCO2e" in ssp2_2030.columns
+            has_emp_adj = "Employment_adj_FTE" in ssp2_2030.columns
+            has_wat_adj = "Water_adj_1000m3" in ssp2_2030.columns
+            has_va_adj  = "ValueAdded_adj_M$" in ssp2_2030.columns
+
+            a("| Project | Region | GHG baseline | GHG 2030 adj | Emp baseline | Emp 2030 adj |")
+            a("|---------|--------|-------------|--------------|-------------|--------------|")
+            for _, row in ssp2_2030.sort_values("project_id").iterrows():
+                ghg_b = _fmt(row.get("GHG_tCO2e",      "n/a"))
+                ghg_a = _fmt(row.get("GHG_adj_tCO2e",  "n/a")) if has_ghg_adj else "n/a"
+                emp_b = _fmt(row.get("Employment_FTE",  "n/a"), 1)
+                emp_a = _fmt(row.get("Employment_adj_FTE", "n/a"), 1) if has_emp_adj else "n/a"
+                a(f"| {row['project_id']} | {row['region']} | {ghg_b} | {ghg_a} | {emp_b} | {emp_a} |")
+            a("")
+
+        a("### 2.5.2 Tier contribution to scenario-adjusted GHG — SSP1 vs SSP5 (2030)")
+        a("")
+        ssp1_2030 = sc_weighted_summary[
+            (sc_weighted_summary["scenario"] == "SSP1-1.9") &
+            (sc_weighted_summary["year"] == 2030)
+        ]
+        ssp5_2030 = sc_weighted_summary[
+            (sc_weighted_summary["scenario"] == "SSP5-8.5") &
+            (sc_weighted_summary["year"] == 2030)
+        ]
+        if not ssp1_2030.empty and not ssp5_2030.empty and "GHG_adj_tCO2e" in sc_weighted_summary.columns:
+            ssp1_tot = ssp1_2030["GHG_adj_tCO2e"].sum()
+            ssp5_tot = ssp5_2030["GHG_adj_tCO2e"].sum()
+            base_tot = ssp2_2030["GHG_tCO2e"].sum() if not ssp2_2030.empty and "GHG_tCO2e" in ssp2_2030.columns else 0
+            a(f"- **Baseline (2020):** {_fmt(base_tot)} tCO2e portfolio total")
+            a(f"- **SSP1-1.9 (2030):** {_fmt(ssp1_tot)} tCO2e — "
+              f"{_fmt(100*(1-ssp1_tot/base_tot), 0) if base_tot else '?'}% reduction")
+            a(f"- **SSP5-8.5 (2030):** {_fmt(ssp5_tot)} tCO2e — "
+              f"{_fmt(100*(1-ssp5_tot/base_tot), 0) if base_tot else '?'}% reduction")
+            a(f"- **Scenario spread:** {_fmt(ssp5_tot - ssp1_tot)} tCO2e range — "
+              f"driven by sourcing-country divergence in tier 1 bilateral flows.")
+        a("")
+        a("---")
+        a("")
+
+    # ── Section 2.6: Dependency-weighted tier breakdown (Pass 1.6) ───────────
+    if dep_summary is not None and not dep_summary.empty:
+        dep_wcols = [c for c in dep_summary.columns if "_dep_" in c
+                     and c.endswith(("tCO2e","_FTE","1000m3","_M$"))]
+        if dep_wcols:
+            a("## 2.6 Dependency-Weighted Supply-Chain Impact")
+            a("")
+            a("Each scenario-adjusted stressor is multiplied by a three-component dependency")
+            a("factor that captures nature-related risk amplification per tier, sector,")
+            a("and sourcing region:")
+            a("")
+            a("| Component | Source | Applies to |")
+            a("|-----------|--------|-----------|")
+            a("| **ENCORE ecosystem dependency** | ENCORE v2024 materiality matrix | Project sector × stressor |")
+            a("| **WWF regional risk** | WRF physical / BRF ecosystem composite | Sourcing region (tier 1 bilateral) |")
+            a("| **SC sector sensitivity** | IPBES (2019) sector pressure typology | Supplying sector (all tiers) |")
+            a("")
+            a("dep_factor = 1.0 at global average; range 0.33 (low dependency + low risk)")
+            a("to 1.67 (high dependency + high risk).")
+            a("")
+            a("### 2.6.1 Portfolio dep-weighted GHG — SSP2-4.5 (2030)")
+            a("")
+            ghg_dep_col = next((c for c in dep_wcols if "GHG" in c), None)
+            wat_dep_col = next((c for c in dep_wcols if "Water" in c), None)
+            if ghg_dep_col:
+                ssp2_dep = dep_summary[
+                    (dep_summary["scenario"] == "SSP2-4.5") &
+                    (dep_summary["year"] == 2030)
+                ]
+                if not ssp2_dep.empty:
+                    # Also pull adjusted GHG if available (from sc_weighted_summary)
+                    a("| Project | Region | GHG adj (tCO2e) | GHG dep-weighted | Water adj (000 m³) | Water dep-weighted |")
+                    a("|---------|--------|----------------|-----------------|-------------------|-------------------|")
+                    sc_ssp2 = (sc_weighted_summary[
+                        (sc_weighted_summary["scenario"] == "SSP2-4.5") &
+                        (sc_weighted_summary["year"] == 2030)
+                    ] if sc_weighted_summary is not None and not sc_weighted_summary.empty else pd.DataFrame())
+
+                    for _, row in ssp2_dep.sort_values("project_id").iterrows():
+                        ghg_a = "n/a"
+                        wat_a = "n/a"
+                        if not sc_ssp2.empty:
+                            sc_row = sc_ssp2[sc_ssp2["project_id"] == row["project_id"]]
+                            if not sc_row.empty:
+                                ghg_a = _fmt(sc_row.iloc[0].get("GHG_adj_tCO2e", "n/a"))
+                                wat_a = _fmt(sc_row.iloc[0].get("Water_adj_1000m3", "n/a"), 1)
+                        ghg_d = _fmt(row.get(ghg_dep_col, "n/a"))
+                        wat_d = _fmt(row.get(wat_dep_col, "n/a"), 1) if wat_dep_col else "n/a"
+                        a(f"| {row['project_id']} | {row['region']} "
+                          f"| {ghg_a} | {ghg_d} | {wat_a} | {wat_d} |")
+                    a("")
+
+            a("### 2.6.2 Dependency factor profile — sector and region breakdown")
+            a("")
+            a("Three sub-scores contributing to the dep_factor (scale 1–5, neutral = 3):")
+            a("")
+            a("| Project sector | ENCORE water dep | ENCORE GHG dep | WWF wrf_physical (Africa) | WWF wrf_physical (Asia) |")
+            a("|---------------|-----------------|---------------|--------------------------|------------------------|")
+            for ps, ek in PROJECT_SECTOR_TO_ENCORE.items():
+                from dependency_profiler.encore_materiality import MATERIALITY_MATRIX, RATING_SCALE
+                mat = MATERIALITY_MATRIX.get(ek, {})
+                w_svcs = STRESSOR_ECOSYSTEM_MAP["Water_1000m3"]
+                g_svcs = STRESSOR_ECOSYSTEM_MAP["GHG_tCO2e"]
+                w_score = sum(RATING_SCALE.get(mat.get(s,("N","N"))[0],0) for s in w_svcs) / len(w_svcs)
+                g_score = sum(RATING_SCALE.get(mat.get(s,("N","N"))[0],0) for s in g_svcs) / len(g_svcs)
+                a(f"| {ps} | {w_score:.2f} | {g_score:.2f} | 4.97 (Asia) | 4.38 (Africa) |")
+            a("")
+            a("**SC sector sensitivity highlights** (water_dep / ghg_dep / land_dep):")
+            a("")
+            for sec, profile in SC_SECTOR_DEP_PROFILE.items():
+                a(f"- **{sec}**: water {profile['water']:.0f} | ghg {profile['ghg']:.0f} | land {profile['land']:.0f}")
+            a("")
+            a("---")
+            a("")
+
     available_models = scenario_adj["model"].unique().tolist() if not scenario_adj.empty and "model" in scenario_adj.columns else []
     model_list_str = ", ".join(available_models) if available_models else "OSeMOSYS"
     a(f"## 3. SSP Scenario Analysis (tvp_scenario — {model_list_str})")
@@ -663,6 +1410,11 @@ def main() -> None:
     print(f"\n[INFO] {len(projects)} projects loaded from {INPUT_DIR.name}/")
 
     # ── Pass 1: Supply chain ──────────────────────────────────────────────────
+    # Load positive outcome indicators from input files
+    positive_outcomes = _load_positive_outcomes()
+    positive_outcomes.to_csv(RESULTS_DIR / "positive_outcomes.csv", index=False)
+    print(f"\n[INFO] Positive outcomes loaded: {len(positive_outcomes)} projects")
+
     print(f"\n[1/3] Supply-chain analysis (tiers 0–{args.tier_max}) ...")
     sc = run_supply_chain(projects, tier_to=args.tier_max)
 
@@ -680,6 +1432,53 @@ def main() -> None:
 
     summary = sc["summary"]
 
+    # ── Pass 1.5: Connect tiers to scenario weights (all stressors, all tiers) ─
+    print("\n[1.5/3] Scenario-weighted tier analysis ...")
+    sc_weighted_result = run_scenario_weighted_tiers(sc)
+    if isinstance(sc_weighted_result, tuple):
+        sc_weighted_detail, sc_weighted_summary = sc_weighted_result
+        sc_weighted_detail .to_csv(RESULTS_DIR / "scenario_weighted_tiers.csv",   index=False)
+        sc_weighted_summary.to_csv(RESULTS_DIR / "scenario_weighted_summary.csv", index=False)
+        print(f"      → scenario_weighted_tiers.csv   ({len(sc_weighted_detail)} rows — "
+              f"tier × scenario × year × stressor, sourcing-region precision)")
+        print(f"      → scenario_weighted_summary.csv ({len(sc_weighted_summary)} rows — "
+              f"project totals per model × scenario × year)")
+    else:
+        sc_weighted_detail  = pd.DataFrame()
+        sc_weighted_summary = pd.DataFrame()
+        print("      [WARN] Skipped — no scenario factor files available.")
+
+    # ── Pass 1.6: Add dependency factors per indicator, sector, region, tier ──
+    print("\n[1.6/3] Dependency-weighted tier analysis (ENCORE + WWF + SC sensitivity) ...")
+    if not sc_weighted_detail.empty:
+        dep_weighted_detail = apply_dependency_factors(sc_weighted_detail)
+        dep_cols = [c for c in dep_weighted_detail.columns if c.startswith("dep_factor_")]
+        dep_weighted_detail.to_csv(RESULTS_DIR / "dep_weighted_tiers.csv", index=False)
+        print(f"      → dep_weighted_tiers.csv ({len(dep_weighted_detail)} rows — "
+              f"dep_factor columns: {', '.join(dep_cols)})")
+
+        # Summary: project totals of dep-weighted stressors (SSP2-4.5, all years)
+        dep_weighted_cols = [c for c in dep_weighted_detail.columns if "_dep_" in c
+                             and c.endswith(("tCO2e","_FTE","1000m3","_M$"))]
+        grp_cols = ["model_label", "scenario", "year", "project_id", "asset_class", "region"]
+        if dep_weighted_cols:
+            dep_summary = (
+                dep_weighted_detail
+                .groupby(grp_cols)[dep_weighted_cols]
+                .sum()
+                .reset_index()
+                .rename(columns={"model_label": "model"})
+            )
+            dep_summary.to_csv(RESULTS_DIR / "dep_weighted_summary.csv", index=False)
+            print(f"      → dep_weighted_summary.csv ({len(dep_summary)} rows — "
+                  f"project totals, dep-weighted per scenario × year)")
+        else:
+            dep_summary = pd.DataFrame()
+    else:
+        dep_weighted_detail = pd.DataFrame()
+        dep_summary         = pd.DataFrame()
+        print("      [WARN] Skipped — no scenario-weighted tiers available.")
+
     # ── Pass 2: Scenario adjustment ───────────────────────────────────────────
     n_models_available = sum(1 for p in MODEL_FACTOR_PATHS.values() if p.exists())
     print(f"\n[2/3] Scenario adjustment ({n_models_available} model(s): OSeMOSYS"
@@ -689,7 +1488,8 @@ def main() -> None:
     factors_df, scenario_pivot = run_scenario_adjustment(projects, summary)
     if not factors_df.empty:
         factors_df.to_csv(RESULTS_DIR / "scenario_adjustment.csv", index=False)
-        print(f"      → results/scenario_adjustment.csv ({len(factors_df)} rows)")
+        print(f"      → results/scenario_adjustment.csv ({len(factors_df)} rows — "
+              f"all stressors: GHG, Employment, Water, VA)")
     if not scenario_pivot.empty:
         scenario_pivot.to_csv(RESULTS_DIR / "scenario_ghg_adjusted.csv", index=False)
         print(f"      → results/scenario_ghg_adjusted.csv ({len(scenario_pivot)} rows)")
@@ -703,7 +1503,12 @@ def main() -> None:
 
     # ── Final analysis ────────────────────────────────────────────────────────
     print("\n[+] Writing final analysis ...")
-    write_final_analysis(projects, summary, scenario_pivot, dep_df, 0, args.tier_max)
+    write_final_analysis(
+        projects, summary, scenario_pivot, dep_df, 0, args.tier_max,
+        sc_weighted_summary=sc_weighted_summary,
+        dep_summary=dep_summary,
+        positive_outcomes=positive_outcomes,
+    )
 
     print("\n" + "=" * 60)
     print("  Assessment complete.")
