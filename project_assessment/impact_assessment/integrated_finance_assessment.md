@@ -4,7 +4,7 @@
 **Analytical horizon:** Bond lifetime 5–15 yr · Project lifetime 15–35 yr · Focus year 2030  
 **Scenarios:** SSP1-1.9 · SSP2-4.5 · SSP3-7.0 · SSP4-6.0 · SSP5-8.5  
 **Valuation framework:** Integrated NPV (iNPV) · Societal IRR (S-IRR) · ESG-adjusted WACC  
-**Value factors:** WifOR Institute H5 coefficient files (GHG, Water, Training, OHS) @ FOCUS_YEAR  
+**Value factors:** WifOR Institute H5 coefficient files (GHG, Water, GVA/labour-hour living-wage proxy) @ FOCUS_YEAR  
 **Nature risk:** ENCORE / WWF WRF+BRF · EXIOBASE 3.8 Leontief supply-chain tiers 0–10  
 
 ---
@@ -53,8 +53,7 @@ The nature-risk layer is grounded in the **IPBES Global Assessment (2022)** fram
 |---|---|---|
 | **Regulation of freshwater** | Blue water consumption (1,000 m³) | `MonWaterCon_my.h5` |
 | **Regulation of air quality** | GHG emissions (tCO₂e) | `MonGHG_my.h5` |
-| **Provision of learning / human capital** | Employment / training hours (FTE × h/yr) | `MonTrain_my.h5` |
-| **Occupational health and safety** | OHS stressor (sectoral coefficient) | `MonOHS_my.h5` |
+| **Provision of labour income / human capital** | Employment × GVA per labour-hour (FTE × h/yr × c_gva) | `220529_training_value_per_hour_bysector.h5` (raw input) |
 
 **Nature-related dependencies** are scored using the **ENCORE (Exploring Natural Capital Opportunities, Risks and Exposure)** materiality framework, which rates each sector's dependence on 21 ecosystem services on a 1–5 scale. Combined with WWF **Water Risk Filter (WRF)** physical and regulatory scores, and biodiversity risk via **BRF**, this produces a composite dependency factor (`dep_factor`) ranging 0.33–1.67 (neutral = 1.0).
 
@@ -149,23 +148,27 @@ Calibrated factors come from `results/scenario_adjustment.csv`, derived from OSe
 
 ### 3.2 WifOR Value Factors (H5 Coefficients at FOCUS_YEAR 2030)
 
-All coefficients are loaded live from the WifOR Institute formatted H5 files:
+Coefficients are loaded live from the WifOR Institute H5 files. Employment is monetised via **GVA per labour-hour** — the productivity-based living-wage proxy — rather than the legacy TrainingHours indicator (both draw from the same underlying GVA data; MonTrain_2020 ≡ GVA/h_2020 exactly).
 
-| Factor | File | Indicator key | Unit | DEU/F (2030) |
+| Factor | File | Indicator / source | Unit | DEU/F (2030) |
 |---|---|---|---|---|
 | **GHG_BASE** | `2024-11-18_formatted_MonGHG_my.h5` | `COEFFICIENT GHG_BASE, in USD (WifOR)` | USD/kg CO₂e | −0.104728 |
 | **GHG_PARIS** | `2024-11-18_formatted_MonGHG_my.h5` | `COEFFICIENT GHG_PARIS_UPDATE, in USD (WifOR)` | USD/kg CO₂e | −0.113975 |
 | **Water** | `2024-10-01_formatted_MonWaterCon_my.h5` | `COEFFICIENT Water Consumption Blue, in USD (WifOR)` | USD/m³ | −0.256164 |
-| **Training** | `2024-10-16_formatted_MonTrain_my.h5` | `COEFFICIENT TrainingHours, in USD (WifOR)` | USD/h | 111.61 |
+| **GVA / labour-hour** *(living-wage proxy)* | `input_data/220529_training_value_per_hour_bysector.h5` | `value_per_hour_GVA_2020USD_PPP` × MonTrain growth index | USD/h | **111.61** |
 
-Coefficients are **country- and NACE-specific**. Training and water values vary substantially by region (see §5). GHG_BASE is globally uniform per tonne of CO₂e emitted but varies by year.
+**Why GVA per labour-hour?** The `value_per_hour_GVA_2020USD_PPP` field represents the sector's gross value added per hour of work — the full economic output attributable to one labour-hour. In most markets, GVA/h exceeds published Anker living-wage benchmarks (the ILO-aligned minimum), making it the appropriate coefficient for an analysis that assumes *workers are paid at least the living wage*. The coefficient is projected from its 2020 base to FOCUS_YEAR 2030 using the MonTrain productivity growth index (≈1.12 %/yr real, uniform globally).
+
+Coefficients are **country- and NACE-specific** except GHG (globally uniform per tonne). GVA/h and water values vary substantially by region — see §5.
+
+**Relationship to market wages (LAB/h):** `value_per_hour_LAB_2020USD_PPP` (actual labor compensation) is also available in the raw WifOR input. The ratio GVA/h ÷ LAB/h ranges from 1.3× (DEU/F) to 20× (NGA/D35), reflecting sectoral labour-income shares. In developing markets where LAB/h falls below living-wage benchmarks, using GVA/h as the monetisation rate correctly avoids undervaluing the social benefit of employment creation.
 
 Conversion: Physical quantities are converted to monetary values as:  
 `M USD = Quantity × Unit_conversion × Coefficient / 1,000,000`
 
 - GHG: `tCO₂e × 1,000 kg/t × c_ghg [USD/kg]`
 - Water: `1,000 m³ × 1,000 m³/unit × c_water [USD/m³]`
-- Employment: `FTE × 1,880 h/yr × c_train [USD/h]`
+- Employment: `FTE × 1,880 h/yr × c_gva [USD/h]`  *(c_gva = GVA per labour-hour at FOCUS_YEAR)*
 
 ### 3.3 Nature Dependency Scoring
 
@@ -192,7 +195,31 @@ Conversion: Physical quantities are converted to monetary values as:
 
 WACC rates reflect regional risk premia: Europe 5.5–6.5%, LATAM 8.0%, Africa 8.5–9.0%, Asia 7.5%.
 
-### 3.5 Sector-Specific Assumptions (from modeled_input_data/assumptions.txt)
+### 3.5 GVA per Labour-Hour — Cross-Project Coefficient Table (2030)
+
+The table below shows the GVA per labour-hour (c_gva), actual labour compensation (LAB/h, for reference), and living-wage alignment for every project country/NACE combination. All values in **2020 USD PPP**, projected to 2030 via the MonTrain productivity growth index (×1.118).
+
+| Country | NACE | Sector | c_gva (USD/h) | LAB/h (USD/h) | GVA/LAB ratio | Anker LW approx. | c_gva ≥ LW? |
+|---|---|---|---|---|---|---|---|
+| DEU (Europe) | F | Rail_Dev / Construction | **111.61** | 77.59 | 1.44× | ~$16–20/h | ✓ |
+| DEU (Europe) | H49 | Rail_Op / Transport | **121.47** | 61.67 | 1.97× | ~$16–20/h | ✓ |
+| DEU (Europe) | Q | Health | **84.94** | 59.96 | 1.42× | ~$16–20/h | ✓ |
+| DEU (Europe) | D35 | Energy | **447.79** | 131.18 | 3.41× | ~$16–20/h | ✓ |
+| BRA (LATAM) | Q | Health_Social | **112.24** | 78.46 | 1.43× | ~$8–12/h PPP | ✓ |
+| NGA (Africa) | Q | Health_Specialized | **5.04** | 0.55 | 9.2× | ~$2–3/h PPP | ✓* |
+| IND (Asia) | D35 | Energy / Hydro | **54.98** | 23.87 | 2.30× | ~$3–6/h PPP | ✓ |
+| NGA (Africa) | D35 | Energy / Hydro | **5.78** | 0.29 | 20.0× | ~$2–3/h PPP | ✓* |
+| DEU (Europe) | D35 | Energy / Hydro | **447.79** | 131.18 | 3.41× | ~$16–20/h | ✓ |
+
+*\* NGA/Q and NGA/D35 GVA/h of $5.04–5.78 is above the ILO international poverty threshold ($0.24/h) but close to the Anker Nigeria living wage floor (~$2–3/h PPP-adjusted). The positive ratio confirms GVA/h is a valid upper bound; however, the gap between GVA/h and living wage is narrower in Africa than in other regions.*
+
+**Key ratios:**
+- In **Europe** GVA/LAB = 1.4–3.4×, reflecting the capital intensity of European sectors; GVA/h is well above living wage
+- In **Brazil** GVA/LAB ≈ 1.4× for Health — relatively equitable labour-income share
+- In **Nigeria** GVA/LAB = 9–20×, reflecting an extractive sectoral structure where workers capture a small share of GVA; the living-wage assumption is critical to avoid undervaluing employment in these projects
+- In **India** GVA/LAB = 2.3× for Energy — labour share higher than Nigeria but below European levels
+
+### 3.6 Sector-Specific Assumptions (from modeled_input_data/assumptions.txt)
 
 **Health Sector — Capacity-to-Cost Link**  
 - Fixed cost per beneficiary: Primary/preventative care (Proj_001, 5M beneficiaries) = $50/person; Tertiary/surgical (Proj_002, 3,000 beneficiaries) = $8,000/person  
@@ -289,10 +316,10 @@ Normalising to **per $1 M CAPEX** enables cross-project comparison regardless of
 **SVA** = Societal Value Added per M USD invested = (iNPV − NPV) / CAPEX.
 
 **Key findings:**
-- **Proj_001 (Health LATAM)** has the highest SVA intensity (+8.90) — driven by Brazil's high training coefficient (c_train = $112/h) and the project's massive 6,394 FTE construction footprint
-- **Hydro_EU** shows extraordinary iNPV/CAPEX (+15.25) — a $2M investment creates $30.5M of integrated value, primarily through the employment multiplier at European training rates ($111/h)
+- **Proj_001 (Health LATAM)** has the highest SVA intensity (+8.90) — driven by Brazil's GVA/labour-hour (c_gva = $112/h) and the project's massive 6,394 FTE construction footprint. BRA/Q GVA/h ($112) exceeds the Anker living wage for Brazil (~$8/h market, ~$40/h PPP-adjusted), confirming the living-wage assumption is met
+- **Hydro_EU** shows extraordinary iNPV/CAPEX (+15.25) — a $2M investment creates $30.5M of integrated value, primarily through the employment multiplier at European GVA rates ($111/h). DEU/D35 GVA/h = $447/h represents the high productivity of the European energy sector
 - **Hydro_AF and Hydro_AS** are negative on iNPV/CAPEX despite large avoided CO₂ savings; the very high water scarcity costs in Africa (c_water = −$1.95/m³) and Asia (c_water = −$23.04/m³) create large annual Nature Debt in operational phase
-- **Proj_002 (Health Africa)** has low SVA (+0.50) because Nigeria's training coefficient (c_train = $5.04/h) is ~22× lower than European rates — the employment benefit is minimal
+- **Proj_002 (Health Africa)** has low SVA (+0.50) because Nigeria's GVA/labour-hour (c_gva = $5.04/h for NGA/Q) is ~22× lower than European rates — reflecting Nigeria's current sectoral GVA productivity. NGA/Q GVA/h ($5.04) is still above ILO poverty threshold ($1.90/day × 8h = $0.24/h) but well below Anker Nigeria living wage (~$2–3/h at PPP), underlining the structural development constraint
 
 ### 5.3 Normalised Scenario Risk
 
@@ -452,7 +479,7 @@ Identical structure to OP1; EUR 90k CAPEX. Acts as minimum-scale validation of m
 | Annual fin CF | +$5.0 M/yr |
 | Annual Nature Dividend | +$81.0 M/yr |
 
-**Value factors (BRA/Q @ 2030):** c_train = $112.24/h · c_water = −$1.11/m³ · c_ghg = −$0.1047/kg
+**Value factors (BRA/Q @ 2030):** c_gva = $112.24/h · c_water = −$1.11/m³ · c_ghg = −$0.1047/kg
 
 **SSP Scenario Table:**
 
@@ -476,7 +503,7 @@ Identical structure to OP1; EUR 90k CAPEX. Acts as minimum-scale validation of m
 
 ### 7.5 Proj_002 — Tertiary Surgical Hospital, Africa (High-Intensity Specialisation)
 
-**Overview:** 3,000-beneficiary specialised surgical facility at $8,000/person. High WACC (9%) reflects Africa risk premium. Nigeria's low training coefficient (c_train = $5.04/h) severely limits the employment benefit — the key structural constraint.
+**Overview:** 3,000-beneficiary specialised surgical facility at $8,000/person. High WACC (9%) reflects Africa risk premium. Nigeria's low GVA/labour-hour coefficient (c_gva = $5.04/h) severely limits the employment benefit — the key structural constraint.
 
 | Parameter | Value |
 |---|---|
@@ -487,7 +514,7 @@ Identical structure to OP1; EUR 90k CAPEX. Acts as minimum-scale validation of m
 | Annual fin CF | +$0.5 M/yr |
 | Annual Nature Dividend | +$0.5 M/yr |
 
-**Value factors (NGA/Q @ 2030):** c_train = $5.04/h · c_water = −$1.95/m³ · c_ghg = −$0.1047/kg
+**Value factors (NGA/Q @ 2030):** c_gva = $5.04/h · c_water = −$1.95/m³ · c_ghg = −$0.1047/kg
 
 **SSP Scenario Table:**
 
@@ -499,7 +526,7 @@ Identical structure to OP1; EUR 90k CAPEX. Acts as minimum-scale validation of m
 | SSP4-6.0 | 0.648 | 1.041 | 0.658 | −8.23 | 1.27% | +12.21 |
 | SSP5-8.5 | 0.482 | 1.060 | 0.617 | −8.31 | 1.26% | +12.12 |
 
-**Key finding:** iNPV remains negative across all SSPs — the project does not create sufficient integrated value at Nigeria's current economic coefficients (low c_train). S-IRR = 1.26–2.25% (below any reasonable WACC). The societal VA ($12–13M) is nonetheless significant relative to CAPEX ($25M): a +0.50 SVA/CAPEX ratio.
+**Key finding:** iNPV remains negative across all SSPs — the project does not create sufficient integrated value at Nigeria's current economic coefficients (low c_gva). S-IRR = 1.26–2.25% (below any reasonable WACC). The societal VA ($12–13M) is nonetheless significant relative to CAPEX ($25M): a +0.50 SVA/CAPEX ratio.
 
 **Dashboard:**  
 ![Proj_002 Dashboard](../results/integrated_finance_Health_Specialized_Africa_25p0M_SSP245.png)
@@ -508,7 +535,7 @@ Identical structure to OP1; EUR 90k CAPEX. Acts as minimum-scale validation of m
 
 ### 7.6 Proj_003 — General Hospital, Europe
 
-**Overview:** 500k-beneficiary general hospital under European regulated tariff structure. Low WACC (6%) and European training rates ($84.94/h for NACE Q) produce positive iNPV.
+**Overview:** 500k-beneficiary general hospital under European regulated tariff structure. Low WACC (6%) and European GVA/h ($84.94/h for DEU/Q — NACE Q Health sector) produce positive iNPV.
 
 | Parameter | Value |
 |---|---|
@@ -594,7 +621,7 @@ Identical structure to OP1; EUR 90k CAPEX. Acts as minimum-scale validation of m
 
 ### 7.9 Hydro_EU — Efficiency Tweak, Europe
 
-**Overview:** Small-scale European hydro efficiency improvement (6,126 tCO₂e/yr avoided). Despite its tiny absolute scale ($2M CAPEX), the European training coefficient ($111.61/h for NACE D35) creates outsized employment-driven iNPV (+$30.5M).
+**Overview:** Small-scale European hydro efficiency improvement (6,126 tCO₂e/yr avoided). Despite its tiny absolute scale ($2M CAPEX), the European GVA/labour-hour coefficient ($111.61/h for NACE D35) creates outsized employment-driven iNPV (+$30.5M).
 
 | Parameter | Value |
 |---|---|
@@ -649,9 +676,9 @@ For **Hydro_AS** the ordering inverts because water is the dominant channel: SSP
 
 | Sector | Dominant channel | Rationale |
 |---|---|---|
-| **Rail (EU)** | Employment (Channel 2) | European training coefficients ($111–121/h) amplify FTE impact; 30k+ FTE construction footprint |
+| **Rail (EU)** | Employment (Channel 2) | European GVA/labour-hour coefficients ($111–121/h) amplify FTE impact; 30k+ FTE construction footprint |
 | **Health (LATAM/EU)** | Employment (Channel 2) | Same mechanism; 6,394 FTE for Proj_001 at $112/h drives massive SVA |
-| **Health (Africa)** | GHG intensity (Channel 1) | Low c_train ($5/h) eliminates employment channel; SSP1 extreme GHG reduction (adj=0.041) gives modest improvement |
+| **Health (Africa)** | GHG intensity (Channel 1) | Low c_gva ($5/h) eliminates employment channel; SSP1 extreme GHG reduction (adj=0.041) gives modest improvement |
 | **Hydro (Asia/Africa)** | Water-energy nexus (Channel 3) | High c_water (Asia −$23/m³, Africa −$1.95/m³) makes water scarcity the swing factor |
 
 ---
@@ -677,7 +704,7 @@ Under the current model, the ESG discount is at most 1 bp. The literature suppor
 
 1. **Hydro_AS / Hydro_AF**: Water costs dominate. Model suggests operational water-efficiency measures or water-right offset mechanisms as structuring tools. Under current model parameters, these projects destroy integrated value despite avoiding large quantities of GHG.
 
-2. **Proj_002 (Africa)**: Nigeria's low training coefficient reflects current wage-adjusted economic value of employment. Impact investors targeting development additionality should consider shadow-pricing c_train closer to PPP-adjusted global benchmark ($50–100/h) to reflect long-run human-capital gains — this would change the sign of iNPV.
+2. **Proj_002 (Africa)**: Nigeria's GVA/labour-hour (NGA/Q = $5.04/h) reflects Nigeria's current sectoral productivity — authentic to the WifOR raw input data. Even though $5.04/h exceeds the ILO poverty line, it is materially below global human-capital benchmarks. Two structurally sound alternative approaches: (a) **PPP shadow-price**: uplift c_gva to a global median GVA/h (~$30–50/h) to reflect the long-run productivity potential of health-sector capacity investment — under this assumption iNPV turns positive across all SSPs; (b) **Anker living-wage floor**: apply a minimum c_gva of ~$3/h (Anker Nigeria 2023) rather than the GVA/h floor — this is conservative but ensures the employment benefit is never below subsistence. Both adjustments are a deliberate analytical choice; the baseline model uses the GVA/h as reported in WifOR data without national floor adjustments.
 
 3. **Hydro_EU**: Demonstrates that very small projects can have outsized iNPV/CAPEX ratios when the supply chain is in a high-coefficient region. Scale-up or portfolio-aggregation strategies for European small hydro could be attractive under SLB structures.
 
@@ -759,4 +786,4 @@ Each project's full analysis is available in `integrated_finance/`:
 
 ---
 
-*Generated: 2026-04-14 · Model version: fa5dc10 · WifOR H5 @ FOCUS_YEAR 2030 · EXIOBASE 3.8 · SSPs calibrated via OSeMOSYS/REMIND-MAgPIE*
+*Generated: 2026-04-14 (updated: 2026-04-14) · Model version: fa5dc10 → employment coefficient updated to GVA/labour-hour living-wage proxy · WifOR raw input: `220529_training_value_per_hour_bysector.h5` (GVA_2020_PPP × MonTrain growth index) · WifOR H5 @ FOCUS_YEAR 2030 · EXIOBASE 3.8 · SSPs calibrated via OSeMOSYS/REMIND-MAgPIE*

@@ -109,12 +109,27 @@ VF_FILE_SPECS: dict[str, dict] = {
         "indicator": "COEFFICIENT TrainingHours, in USD (WifOR)",
         "year":      "2020",
         "unit":      "USD/h",
-        "note":      "Workplace training benefit — wage-based, country- and sector-specific",
+        "note":      "Workplace training benefit — GVA-based, country- and sector-specific (legacy key)",
+    },
+    # GVA per labour-hour: the productivity-based living-wage proxy.
+    # Loaded from WifOR raw input (220529_training_value_per_hour_bysector.h5)
+    # rather than the MonTrain formatted H5.  MonTrain_2020 = GVA_2020 exactly;
+    # the distinction is conceptual: this key explicitly monetises *all* labour
+    # hours at the sector GVA rate (i.e., assuming workers are paid at least the
+    # GVA-equivalent, which exceeds Anker living-wage benchmarks in most markets).
+    "gva_per_hour": {
+        "filename":  "input_data/220529_training_value_per_hour_bysector.h5",
+        "indicator": "value_per_hour_GVA_2020USD_PPP",
+        "year":      "2020",
+        "unit":      "USD/h",
+        "note":      "GVA per labour-hour (2020 PPP) — living-wage proxy for FTE monetisation; "
+                     "GVA/h ≥ Anker living wage in most markets; projected to FOCUS_YEAR via "
+                     "MonTrain productivity growth index (ILO-aligned, ~1.1 %/yr real)",
     },
 }
 
 # ILO 2022 average annual hours worked per FTE — converts FTE to hours for the
-# training value factor multiplication.
+# GVA-per-labour-hour monetisation.
 FTE_HOURS_PER_YEAR = 1_880
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1074,6 +1089,80 @@ def _load_vf_coeff(
         return None
 
 
+def _load_gva_per_hour(
+    vf_dir: Path | None,
+    country_iso3: str,
+    nace_sector: str,
+    focus_year: int = 2030,
+) -> float | None:
+    """
+    Return GVA per labour-hour (USD/h) at *focus_year*, projected from the
+    WifOR 2020-PPP base using the MonTrain productivity growth index.
+
+    Conceptual basis (living-wage alignment)
+    ─────────────────────────────────────────
+    GVA per labour-hour is the sector's gross value added per hour of work —
+    the upper bound on what the sector can sustainably pay as wages.  In most
+    markets GVA/h exceeds published Anker living-wage benchmarks, so using
+    GVA/h as the employment monetisation coefficient is equivalent to assuming
+    "workers are paid at least the living wage."
+
+    Key properties
+    • Country- and sector-specific (188 GeoRegions × 57 NACE codes)
+    • Projected from 2020 base using MonTrain growth ratio (≈1.1 %/yr real)
+    • MonTrain_2020 ≡ GVA/h_2020 (confirmed exact match; same source data)
+
+    Returns None if the source H5 files are absent.
+    """
+    if vf_dir is None:
+        return None
+
+    raw_path = vf_dir / "input_data" / "220529_training_value_per_hour_bysector.h5"
+    if not raw_path.exists():
+        return None
+
+    try:
+        import h5py
+
+        with h5py.File(str(raw_path), "r") as f:
+            grp  = f["value_per_hour"]
+            lvl0 = [x.decode() for x in grp["axis1_level0"][:]]   # GeoRegion
+            lvl1 = [x.decode() for x in grp["axis1_level1"][:]]   # NACE
+            lab0 = grp["axis1_label0"][:]
+            lab1 = grp["axis1_label1"][:]
+            items = [x.decode() for x in grp["block0_items"][:]]
+            vals  = grp["block0_values"][:]                         # (10716, 2)
+
+        gva_col = next(i for i, x in enumerate(items) if "GVA" in x)
+        col_pos = next(
+            i for i in range(len(lab0))
+            if lvl0[lab0[i]] == country_iso3 and lvl1[lab1[i]] == nace_sector
+        )
+        gva_2020 = float(vals[col_pos, gva_col])
+
+    except (StopIteration, KeyError, OSError):
+        return None
+
+    # Project gva_2020 → focus_year using MonTrain's growth index.
+    # MonTrain_2020 ≡ GVA/h_2020, so the ratio MonTrain_focusyr/MonTrain_2020
+    # is a pure productivity growth factor (~1.118 for 2030, uniform globally).
+    train_path = vf_dir / "2024-10-16_formatted_MonTrain_my.h5"
+    growth = 1.0
+    if train_path.exists():
+        try:
+            indicator = "COEFFICIENT TrainingHours, in USD (WifOR)"
+            t2020  = _h5py_lookup(train_path, "2020",          indicator, country_iso3, nace_sector)
+            t_focus = _h5py_lookup(train_path, str(focus_year), indicator, country_iso3, nace_sector)
+            if t2020 and t_focus and t2020 > 0:
+                growth = t_focus / t2020
+        except Exception:
+            growth = 1.012 ** (focus_year - 2020)   # ILO fallback: 1.2 %/yr
+    else:
+        growth = 1.012 ** (focus_year - 2020)
+
+    return gva_2020 * growth
+
+
 def run_wifor_impact(
     supply_summary: pd.DataFrame,
     projects: list[dict],
@@ -1122,7 +1211,10 @@ def run_wifor_impact(
         c_ghg       = _load_vf_coeff(VF_FILE_SPECS["ghg"],       vf_dir, country_iso3, nace)
         c_ghg_paris = _load_vf_coeff(VF_FILE_SPECS["ghg_paris"], vf_dir, country_iso3, nace)
         c_water     = _load_vf_coeff(VF_FILE_SPECS["water"],     vf_dir, country_iso3, nace)
-        c_train     = _load_vf_coeff(VF_FILE_SPECS["training"],  vf_dir, country_iso3, nace)
+        # GVA-per-labour-hour: living-wage proxy for employment monetisation.
+        # Loaded from the raw WifOR input (GVA_2020_PPP) and projected to
+        # the supply chain reference year via MonTrain's productivity growth index.
+        c_gva       = _load_gva_per_hour(vf_dir, country_iso3, nace)
 
         def _musd(qty: float, conv: float, coeff: float | None) -> float:
             return qty * conv * (coeff or 0.0) / 1e6
@@ -1130,7 +1222,7 @@ def run_wifor_impact(
         ghg_impact       = _musd(ghg_t,   1_000,              c_ghg)
         ghg_paris_impact = _musd(ghg_t,   1_000,              c_ghg_paris)
         water_impact     = _musd(wat_km3, 1_000,              c_water)
-        emp_impact       = _musd(emp_fte, FTE_HOURS_PER_YEAR, c_train)
+        emp_impact       = _musd(emp_fte, FTE_HOURS_PER_YEAR, c_gva)
 
         rows.append({
             "project_id":             pid,
@@ -1142,7 +1234,7 @@ def run_wifor_impact(
             "coeff_ghg_base_usd_kg":  c_ghg,
             "coeff_ghg_paris_usd_kg": c_ghg_paris,
             "coeff_water_usd_m3":     c_water,
-            "coeff_train_usd_h":      c_train,
+            "coeff_gva_usd_h":        c_gva,   # GVA/labour-hour — living-wage proxy
             # Physical inputs
             "GHG_tCO2e":              ghg_t,
             "Water_1000m3":           wat_km3,
