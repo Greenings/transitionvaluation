@@ -32,3 +32,6 @@
 [submodule "tvp_scenario"]
 	path = tvp_scenario
 	url = https://github.com/d1mitrij/tvp_scenario
+[submodule "WifORIO"]
+	path = WifORIO
+	url = https://github.com/wifor-impactanalysis/WifORIO
