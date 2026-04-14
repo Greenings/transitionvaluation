@@ -243,9 +243,9 @@ def make_calib_cell(p: dict) -> str:
         f"<td>Sector/region risk-adjusted; infra WACC 5&#8211;9%</td>"
         f"<td>OK &#8212; region-adjusted for {region}</td></tr>\n"
         "<tr class='warn'>"
-        "<td>SCC &#8212; GHG (c_ghg)</td><td>~$19/tCO&#8322;e (Nordhaus)</td>"
-        "<td>IPCC AR6 WG3 central: $171/tCO&#8322;e</td>"
-        "<td>CONSERVATIVE &#8212; outputs are lower bounds</td></tr>\n"
+        "<td>SCC &#8212; GHG (c_ghg)</td><td>WifOR GHG_BASE @ 2030 (~$105/tCO&#8322;e)</td>"
+        "<td>IPCC AR6 WG3 central: $171/tCO&#8322;e; Paris-aligned: ~$115/tCO&#8322;e</td>"
+        "<td>CONSERVATIVE &#8212; 38&#8211;61% of IPCC central; outputs are lower bounds</td></tr>\n"
         "<tr class='err'>"
         "<td>Legal risk (L_legal)</td><td>Not modelled</td>"
         "<td>Wetzer et al. (Science 383:152, 2024)</td>"
@@ -317,6 +317,41 @@ def make_calib_cell(p: dict) -> str:
         "# -- Plausibility check HTML table ------------------------------------",
         f"_html = {html_repr}",
         "display(HTML(_html))",
+        "",
+        "# -- WifOR H5 value factors for this project -------------------------",
+        "try:",
+        "    import sys as _sys",
+        "    _sys.path.insert(0, str(_BASE.resolve()))",
+        "    from assess import VF_FILE_SPECS, _resolve_wifor_dir, _load_vf_coeff, REGION_TO_ISO3, PROJECT_SECTOR_TO_NACE",
+        f"    _sec  = '{p['sector']}'",
+        f"    _reg  = '{p['region']}'",
+        "    _iso3 = REGION_TO_ISO3.get(_reg, 'DEU')",
+        "    _nace = PROJECT_SECTOR_TO_NACE.get(_sec, 'Q')",
+        "    _VF_DIR = _resolve_wifor_dir()",
+        "    if _VF_DIR:",
+        "        _vf_rows = []",
+        "        for _key, _lbl, _unit in [",
+        "            ('ghg',       'GHG BASE (Nordhaus DICE)', 'USD/kg'),",
+        "            ('ghg_paris', 'GHG PARIS-aligned',        'USD/kg'),",
+        "            ('water',     'Water (Blue Consumption)', 'USD/m3'),",
+        "            ('training',  'Training / Employment',    'USD/h'),",
+        "        ]:",
+        "            _spec = {**VF_FILE_SPECS[_key], 'year': str(YEAR_CAL)}",
+        "            _v = _load_vf_coeff(_spec, _VF_DIR, _iso3, _nace)",
+        "            _eq = f'${abs(_v)*1000:.2f}/t' if _key.startswith('ghg') and _v else '-'",
+        "            _vf_rows.append(f'<tr><td>{_lbl}</td><td>{_iso3}/{_nace}</td>'",
+        "                            f'<td>{_v:.6f} {_unit}</td><td>{_eq}</td></tr>')",
+        f"        _vf_html = ('<h4>WifOR H5 Value Factors &mdash; {proj_id} @ ' + str(YEAR_CAL) + '</h4>'",
+        "                    '<style>.vft td,.vft th{padding:4px 10px;border:1px solid #ccc;font-size:12px}'",
+        "                    '.vft th{background:#34495e;color:#fff}</style>'",
+        "                    \"<table class='vft'><tr><th>Factor</th><th>Country/NACE</th>\"",
+        "                    '<th>Coefficient</th><th>Per-tonne equiv</th></tr>'",
+        "                    + ''.join(_vf_rows) + '</table>')",
+        "        display(HTML(_vf_html))",
+        "    else:",
+        "        print('WifOR H5 directory not found -- value factor table skipped')",
+        "except Exception as _e:",
+        "    print(f'Value factor table skipped: {_e}')",
     ]
     return "\n".join(lines) + "\n"
 
